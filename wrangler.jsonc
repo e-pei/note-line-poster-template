@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "note-line-poster",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  "d1_databases": [
+    { "binding": "DB", "database_name": "note-line-poster", "database_id": "YOUR_D1_DATABASE_ID", "migrations_dir": "migrations" }
+  ],
+  "kv_namespaces": [
+    { "binding": "KV", "id": "YOUR_KV_NAMESPACE_ID" }
+  ],
+  // 公開処理は数秒で終わるため Webhook の waitUntil 内で同期実行する。
+  // 生成だけは画像待ちの sleep が要るので Workflow にする。
+  "workflows": [
+    { "binding": "GENERATE", "name": "generate-article", "class_name": "GenerateArticleWorkflow" }
+  ],
+
+  // 毎日09:00 JST = 00:00 UTC: セッション生存確認
+  // 15分ごと: blocked 記事の再開チェック
+  "triggers": { "crons": ["0 0 * * *", "*/15 * * * *"] }
+}

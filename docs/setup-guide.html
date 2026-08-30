@@ -1,0 +1,1860 @@
+<title>note-line-poster 初回セットアップ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Murecho:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap">
+
+<style>
+  /* ── 色 ────────────────────────────────────────────
+     手動＝琥珀 / 自動＝翡翠 の2色だけで「誰がやるか」を表す。
+     中立色は翡翠寄りに振ってある（純グレーは選ばれていない色に見える）。 */
+  :root {
+    --ground:   #FBFCFB;
+    --surface:  #FFFFFF;
+    --sunken:   #F3F6F5;
+    --ink:      #131A18;
+    --muted:    #5B6764;
+    --faint:    #8A9591;
+    --line:     #E1E8E5;
+    --line-soft:#EDF2F0;
+
+    --auto:     #0F7A62;
+    --auto-bg:  #E8F5F1;
+    --manual:   #8F5410;
+    --manual-bg:#FAF0E2;
+    --alarm:    #A32E23;
+    --alarm-bg: #FBEDEB;
+
+    --shadow: 0 1px 2px rgba(19, 26, 24, .05), 0 8px 24px -12px rgba(19, 26, 24, .12);
+  }
+
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --ground:   #0F1413;
+      --surface:  #171D1B;
+      --sunken:   #1E2523;
+      --ink:      #E9EEEC;
+      --muted:    #98A5A1;
+      --faint:    #6E7B77;
+      --line:     #29312F;
+      --line-soft:#212827;
+
+      --auto:     #55C8A9;
+      --auto-bg:  #122A25;
+      --manual:   #E0A45C;
+      --manual-bg:#2C2214;
+      --alarm:    #F08175;
+      --alarm-bg: #2E1917;
+
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:   #0F1413;
+    --surface:  #171D1B;
+    --sunken:   #1E2523;
+    --ink:      #E9EEEC;
+    --muted:    #98A5A1;
+    --faint:    #6E7B77;
+    --line:     #29312F;
+    --line-soft:#212827;
+
+    --auto:     #55C8A9;
+    --auto-bg:  #122A25;
+    --manual:   #E0A45C;
+    --manual-bg:#2C2214;
+    --alarm:    #F08175;
+    --alarm-bg: #2E1917;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Murecho", -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .display {
+    font-family: "Zen Kaku Gothic New", -apple-system, "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+    text-wrap: balance;
+  }
+
+  code, kbd, .mono {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  a { color: var(--auto); text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+
+  :focus-visible {
+    outline: 2px solid var(--auto);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* ── 進み具合のバー ───────────────────────────────── */
+  .track {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--ground) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .track__inner {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .track__bar {
+    flex: 1;
+    height: 4px;
+    background: var(--line);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .track__fill {
+    height: 100%;
+    width: 100%;
+    background: var(--auto);
+    border-radius: 99px;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform .35s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  .track__count {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .track__reset {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    cursor: pointer;
+  }
+  .track__reset:hover { border-color: var(--auto); color: var(--auto); }
+
+  /* ── Mac / Windows の切替 ─────────────────────────── */
+  .osw {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .osw button {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    padding: 4px 12px;
+    cursor: pointer;
+  }
+  .osw button + button { border-left: 1px solid var(--line); }
+  .osw button[aria-pressed="true"] {
+    background: var(--auto);
+    color: var(--ground);
+    font-weight: 700;
+  }
+
+  /* 選ばれていない OS 向けの記述は隠す */
+  [data-os].is-hidden { display: none !important; }
+
+  .oshint {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 2px 7px;
+    margin-bottom: 8px;
+  }
+
+  /* ── 版面 ─────────────────────────────────────────── */
+  .page {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 0 24px 120px;
+  }
+
+  /* 見出し・本文は読み幅に収める。左の余白に印を出す */
+  .prose { max-width: 64ch; }
+
+  header.hero {
+    padding: 72px 0 40px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 48px;
+  }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 18px;
+  }
+
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 900;
+    line-height: 1.25;
+    letter-spacing: -.01em;
+    margin: 0 0 20px;
+  }
+
+  .lede {
+    font-size: 17px;
+    color: var(--muted);
+    margin: 0 0 32px;
+    max-width: 56ch;
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 32px;
+    padding-top: 4px;
+  }
+
+  .fact__k {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--faint);
+    display: block;
+  }
+
+  .fact__v {
+    font-family: "Zen Kaku Gothic New", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  /* ── 凡例 ─────────────────────────────────────────── */
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 56px;
+  }
+
+  .legend__cell {
+    background: var(--surface);
+    padding: 18px 20px;
+  }
+
+  .legend__cell p {
+    margin: 8px 0 0;
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ── 誰がやるかの札 ───────────────────────────────── */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    padding: 3px 9px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+
+  .tag--manual { background: var(--manual-bg); color: var(--manual); }
+  .tag--auto   { background: var(--auto-bg);   color: var(--auto); }
+
+  .tag::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ── 段階 ─────────────────────────────────────────── */
+  .phase { margin-bottom: 56px; scroll-margin-top: 70px; }
+
+  .phase__head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 26px;
+  }
+
+  .phase__num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phase__title {
+    font-size: 21px;
+    font-weight: 900;
+    margin: 0;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .phase__time {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .phase__intro {
+    color: var(--muted);
+    font-size: 14.5px;
+    margin: -8px 0 26px;
+    max-width: 62ch;
+  }
+
+  /* ── ひとつの作業 ─────────────────────────────────── */
+  .step {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 0 16px;
+    padding: 0 0 26px;
+    position: relative;
+  }
+
+  /* 左端に縦線を通して、上から下へ進む感じを出す */
+  .step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 26px;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+  }
+
+  .step__check {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    margin: 1px 0 0;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    cursor: pointer;
+    display: grid;
+    place-content: center;
+    position: relative;
+    z-index: 1;
+    transition: border-color .15s, background .15s;
+  }
+
+  .step__check::after {
+    content: "";
+    width: 10px;
+    height: 6px;
+    border-left: 2px solid var(--surface);
+    border-bottom: 2px solid var(--surface);
+    transform: rotate(-45deg) translate(1px, -1px) scale(0);
+    transition: transform .15s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  .step__check:checked {
+    background: var(--auto);
+    border-color: var(--auto);
+  }
+  .step__check:checked::after { transform: rotate(-45deg) translate(1px, -1px) scale(1); }
+  .step__check:hover { border-color: var(--auto); }
+
+  .step__body { min-width: 0; }
+
+  .step__title {
+    font-family: "Zen Kaku Gothic New", sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .step__check:checked ~ .step__body .step__title {
+    color: var(--faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--line);
+  }
+
+  .step__body p {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 14.5px;
+    max-width: 60ch;
+  }
+
+  .step__body p:last-child { margin-bottom: 0; }
+  .step__body strong { color: var(--ink); font-weight: 600; }
+
+  .step__body ul {
+    margin: 0 0 10px;
+    padding-left: 20px;
+    color: var(--muted);
+    font-size: 14.5px;
+    max-width: 60ch;
+  }
+  .step__body li { margin-bottom: 4px; }
+
+  /* ── コマンド ─────────────────────────────────────── */
+  .cmd {
+    position: relative;
+    background: var(--sunken);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+
+  .cmd__scroll { overflow-x: auto; padding: 12px 68px 12px 14px; }
+
+  .cmd code {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink);
+    white-space: pre;
+    display: block;
+  }
+
+  .cmd__copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .cmd__copy:hover { border-color: var(--auto); color: var(--auto); }
+  .cmd__copy[data-copied="1"] { border-color: var(--auto); color: var(--auto); }
+
+  /* ── 注意書き ─────────────────────────────────────── */
+  .note {
+    background: var(--manual-bg);
+    border: 1px solid color-mix(in srgb, var(--manual) 22%, transparent);
+    padding: 13px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-size: 14px;
+    color: var(--ink);
+    max-width: 60ch;
+  }
+
+  .note--alarm {
+    background: var(--alarm-bg);
+    border-color: color-mix(in srgb, var(--alarm) 26%, transparent);
+  }
+  .note strong { font-weight: 700; }
+  .note p { margin: 0; color: inherit; font-size: inherit; }
+  .note p + p { margin-top: 8px; }
+
+  .note__label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    display: block;
+    margin-bottom: 5px;
+    color: var(--manual);
+  }
+
+  .note--alarm .note__label { color: var(--alarm); }
+
+  /* ── 集めた値の控え ───────────────────────────────── */
+  .vault {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 56px;
+    box-shadow: var(--shadow);
+  }
+
+  .vault h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+
+  .vault > p {
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0 0 18px;
+    max-width: 60ch;
+  }
+
+  .vault__list {
+    display: grid;
+    gap: 1px;
+    background: var(--line-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .vault__row {
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: minmax(0, 210px) 1fr;
+    gap: 4px 18px;
+    padding: 11px 15px;
+    align-items: baseline;
+  }
+
+  .vault__key {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    word-break: break-all;
+  }
+
+  .vault__from { font-size: 13px; color: var(--muted); }
+
+  /* ── 表 ───────────────────────────────────────────── */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin: 20px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 520px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    vertical-align: top;
+  }
+
+  th {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    font-weight: 700;
+    background: var(--sunken);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  td:first-child { font-weight: 600; color: var(--ink); }
+  td { color: var(--muted); }
+
+  /* ── しめくくり ───────────────────────────────────── */
+  .outro {
+    border-top: 2px solid var(--ink);
+    padding-top: 32px;
+    margin-top: 72px;
+  }
+
+  .outro h2 { font-size: 19px; font-weight: 900; margin: 0 0 12px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 640px) {
+    body { font-size: 14.5px; }
+    header.hero { padding: 44px 0 32px; }
+    .page { padding: 0 18px 80px; }
+    .vault__row { grid-template-columns: 1fr; }
+    .cmd__scroll { padding-right: 14px; padding-top: 40px; }
+  }
+</style>
+
+<div class="track">
+  <div class="track__inner">
+    <span class="track__count" id="count">0 / 0</span>
+    <div class="track__bar"><div class="track__fill" id="fill"></div></div>
+    <div class="osw" id="osw" role="group" aria-label="お使いのパソコン">
+      <button type="button" data-pick="mac" aria-pressed="true">Mac</button>
+      <button type="button" data-pick="win" aria-pressed="false">Windows</button>
+    </div>
+    <button class="track__reset" id="reset" type="button">やり直す</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <header class="hero">
+    <p class="eyebrow">note-line-poster / 初回セットアップ</p>
+    <h1>ゼロから通しで<br>組み上げる手順</h1>
+    <p class="lede">
+      新しいメールアドレスを1つ用意して、LINE公式アカウントから note への自動投稿が
+      動きだすところまで。<strong>この手順で作る環境は、使う人ひとり専用</strong>です。
+      チェックを付けながら進めてください。途中で閉じても、次に開いたときに続きから再開できます。
+    </p>
+    <div class="facts">
+      <div class="fact">
+        <span class="fact__k">所要</span>
+        <span class="fact__v">約 60 分</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">費用</span>
+        <span class="fact__v">初期 0 円</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">用意するもの</span>
+        <span class="fact__v">パソコンの Chrome とスマホの LINE</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="legend">
+    <div class="legend__cell">
+      <span class="tag tag--manual">手でやる</span>
+      <p>アカウントを作る・本人としてログインする・鍵を発行する。この3つには、どのサービスも API を用意していません。意図的に閉じている部分なので、迂回しません。</p>
+    </div>
+    <div class="legend__cell">
+      <span class="tag tag--auto">コマンドがやる</span>
+      <p><strong>黒枠の中の文字をコピーして、ターミナルという画面に貼り付けて Enter を押す</strong>、という意味です。打ち込む必要はありません。ターミナルの開き方は<a href="#pready">「パソコンの準備」</a>にあります。</p>
+    </div>
+  </div>
+
+  <section class="vault">
+    <h2>まず、あなたはどれですか</h2>
+    <p>
+      この手順書は <strong>「初めて1つ作る人」</strong>に向けて書いてあります。
+      上から順にやれば終わります。ただし、次の場合だけ<strong>追加でやることがあります</strong>。
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>あなたの場面</th><th>この手順書の使い方</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>A. 初めて1つ作る</strong><br>（お客さまに渡す1台目）</td>
+            <td><strong>上から全部やる。</strong>追加作業はありません</td>
+          </tr>
+          <tr>
+            <td><strong>B. 同じパソコンで<br>2つ目以降を作る</strong></td>
+            <td>全部やる。<strong>ただし2か所だけ違います</strong><br>
+            ① <a href="#pready">準備</a>：既存のフォルダを使い回さず、<strong>コピーを作ってから</strong>始める<br>
+            ② <a href="#p4">04</a>：<code>wrangler login</code> ではなく <strong>名前付きログイン</strong>を使う（既存のログインが消えるため）</td>
+          </tr>
+          <tr>
+            <td><strong>C. すでに動いている</strong></td>
+            <td><strong>何もしなくて大丈夫です。</strong>この手順書は新しく作るとき用です</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note note--alarm">
+      <span class="note__label">B の人がいちばん事故りやすい</span>
+      <p>いま動いている環境のフォルダで作業すると、<strong>接続先が新しいほうに書き換わって、元の環境が動かなくなります。</strong>
+      必ずフォルダごとコピーしてから始めてください。</p>
+    </div>
+  </section>
+
+  <section class="vault">
+    <h2>この手順で集める5つの値</h2>
+    <p>
+      あちこちのサイトから少しずつ集めることになります。最後に <code>.dev.vars</code> という1つのファイルへまとめて貼るので、
+      見つけたらメモ帳などに控えておいてください。
+    </p>
+    <div class="vault__list">
+      <div class="vault__row">
+        <span class="vault__key">LINE_CHANNEL_SECRET</span>
+        <span class="vault__from">LINE Developers → チャネル基本設定</span>
+      </div>
+      <div class="vault__row">
+        <span class="vault__key">LINE_CHANNEL_ACCESS_TOKEN</span>
+        <span class="vault__from">LINE Developers → Messaging API設定（長期）</span>
+      </div>
+      <div class="vault__row">
+        <span class="vault__key">ANTHROPIC_API_KEY</span>
+        <span class="vault__from">Anthropic Console（sk-ant- で始まる）</span>
+      </div>
+      <div class="vault__row">
+        <span class="vault__key">D1 の database_id</span>
+        <span class="vault__from">コマンドの出力に表示される</span>
+      </div>
+      <div class="vault__row">
+        <span class="vault__key">KV の id</span>
+        <span class="vault__from">コマンドの出力に表示される</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 0 ─────────────────────────────────────────── -->
+  <section class="phase" id="p0">
+    <div class="phase__head">
+      <span class="phase__num">00</span>
+      <h2 class="phase__title">メールアドレスを1つ用意する</h2>
+      <span class="phase__time">5分</span>
+    </div>
+    <p class="phase__intro">
+      これから4つのサービスに登録します。全部を同じメールアドレスで作ると、あとで「どれがどのアカウントだったか」で迷いません。
+    </p>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s0-1">
+      <div class="step__body">
+        <h3 class="step__title">新しい Google アカウントを作る <span class="tag tag--manual">手でやる</span></h3>
+        <p>このアドレスで <strong>LINEビジネスID・note・Anthropic・Cloudflare</strong> の4つを作ります。</p>
+        <div class="note">
+          <span class="note__label">確認メールが4通届きます</span>
+          <p>どれも本登録に必要です。迷惑メールに入っていないか、あとで一度見てください。</p>
+        </div>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── 1 ─────────────────────────────────────────── -->
+  <section class="phase" id="p1">
+    <div class="phase__head">
+      <span class="phase__num">01</span>
+      <h2 class="phase__title">LINE公式アカウントを開設する</h2>
+      <span class="phase__time">25分</span>
+    </div>
+    <p class="phase__intro">
+      いちばん手数が多いところです。<strong>使う画面が2つあって、行ったり来たり</strong>するので混乱しやすい場所でもあります。
+      先に、その2つの違いだけ頭に入れておいてください。
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>画面</th><th>何をするところ</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>LINE Official<br>Account Manager</strong><br><code>manager.line.biz</code></td>
+            <td>アカウントの<strong>お店側の設定</strong>。名前、あいさつ文、自動返信のオン/オフなど。<br>普段お店の人が使う画面です</td>
+          </tr>
+          <tr>
+            <td><strong>LINE Developers<br>Console</strong><br><code>developers.line.biz</code></td>
+            <td>アカウントを<strong>プログラムから動かすための設定</strong>。<br>鍵（シークレット・トークン）はここにあります</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="phase__intro">
+      この章では <strong>Manager →（切り替え）→ Developers</strong> の順で進みます。
+      どちらの画面の話をしているかは、各手順の先頭に書いてあります。
+    </p>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-1">
+      <div class="step__body">
+        <h3 class="step__title">LINEビジネスIDを作る <span class="tag tag--manual">手でやる</span></h3>
+        <p>まず、仕事用の LINE アカウント（LINEビジネスID）を作ります。<strong>普段使っている個人の LINE とは別物</strong>です。</p>
+        <ol>
+          <li><a href="https://account.line.biz/signup" target="_blank" rel="noopener">account.line.biz/signup</a> を開く</li>
+          <li><strong>「メールアドレスで登録」</strong>を選ぶ（00 で用意したアドレスを使います）</li>
+          <li>届いた確認メールのリンクを開き、名前とパスワードを決める</li>
+        </ol>
+        <div class="note">
+          <span class="note__label">「LINEアカウントで登録」でもいい？</span>
+          <p>個人の LINE と紐づけたくなければ、<strong>メールアドレスで登録</strong>を選んでください。
+          あとで担当者を替えるときに困りにくくなります。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-2">
+      <div class="step__body">
+        <h3 class="step__title">LINE公式アカウントを開設する <span class="tag tag--manual">手でやる</span></h3>
+        <p><span class="oshint">LINE Official Account Manager</span></p>
+        <p>ログインすると、そのままアカウントの作成フォームが出ます
+        （出ないときは <a href="https://manager.line.biz/" target="_blank" rel="noopener">manager.line.biz</a> →「作成」）。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>入力欄</th><th>入れるもの</th></tr></thead>
+            <tbody>
+              <tr><td>アカウント名</td><td>お店・会社の名前（<strong>あとから変更できます</strong>）</td></tr>
+              <tr><td>メールアドレス</td><td>00 で用意したもの</td></tr>
+              <tr><td>会社・事業者の名前</td><td>屋号や個人名でも構いません</td></tr>
+              <tr><td>業種</td><td>近いものを選ぶ</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>料金プランは <strong>コミュニケーションプラン（無料）</strong> のままで大丈夫です。
+        青いバッジ（認証済みアカウント）の申請も<strong>不要</strong>です。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-3">
+      <div class="step__body">
+        <h3 class="step__title">Messaging API を有効にする <span class="tag tag--manual">手でやる</span></h3>
+        <p><span class="oshint">LINE Official Account Manager</span></p>
+        <p>ここで初めて「プログラムから動かせる状態」になります。</p>
+        <ol>
+          <li>作ったアカウントを開く</li>
+          <li><strong>画面右上の「設定」</strong>（歯車）を押す</li>
+          <li>左のメニューの一番下あたり <strong>「Messaging API」</strong> を押す</li>
+          <li><strong>「Messaging APIを利用する」</strong>ボタンを押す</li>
+          <li>プロバイダーを聞かれるので、<strong>「新規プロバイダーを作成」</strong>を選び、名前を入れる</li>
+          <li>プライバシーポリシー・利用規約の URL は<strong>空のままで構いません</strong>（あとで入れられます）</li>
+          <li>内容を確認して <strong>「OK」</strong></li>
+        </ol>
+        <div class="note note--alarm">
+          <span class="note__label">プロバイダー名はあとから変更できません</span>
+          <p>プロバイダーとは「このアカウントの提供元」の名前で、<strong>利用者から見えます</strong>。
+          屋号や会社名など、人に見せてよい名前を入れてください（例：Branch Line）。
+          思いつかなければ、お店の名前をそのまま入れて構いません。</p>
+        </div>
+        <p>成功すると、この画面に <strong>Channel ID</strong> と <strong>Channel secret</strong> が表示されます。
+        ここで見えるものは<strong>まだ控えなくて大丈夫</strong>です（次の手順で改めて取りにいきます）。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-4">
+      <div class="step__body">
+        <h3 class="step__title">応答メッセージをオフにする <span class="tag tag--manual">手でやる</span></h3>
+        <p><span class="oshint">LINE Official Account Manager</span></p>
+        <ol>
+          <li>右上の <strong>「設定」</strong> → 左メニューの <strong>「応答設定」</strong></li>
+          <li><strong>応答メッセージ</strong> を <strong>オフ</strong></li>
+          <li><strong>Webhook</strong> を <strong>オン</strong></li>
+          <li>あいさつメッセージはどちらでも構いません</li>
+        </ol>
+        <div class="note note--alarm">
+          <span class="note__label">ここが一番の落とし穴です</span>
+          <p><strong>応答メッセージがオンのままだと、LINE の定型文と AI の返信が二重に届きます。</strong>
+          「なぜか変な返事が来る」の原因はほぼこれです。
+          この設定を変える API が存在しないので自動化できません。<strong>ここだけは必ず手で切ってください。</strong></p>
+        </div>
+        <div class="note">
+          <span class="note__label">「応答モード」を聞かれたら</span>
+          <p><strong>チャット</strong>でも<strong>Bot</strong>でも動きます。迷ったらそのままで構いません。
+          大事なのは上の3つだけです。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-5">
+      <div class="step__body">
+        <h3 class="step__title">開発者向けの画面に移動する <span class="tag tag--manual">手でやる</span></h3>
+        <p><span class="oshint">LINE Official Account Manager → LINE Developers Console</span></p>
+        <p>ここから<strong>もう一方の画面</strong>に移ります。鍵はそちらにあります。</p>
+        <ol>
+          <li><a href="https://developers.line.biz/console/" target="_blank" rel="noopener">developers.line.biz/console</a> を開く</li>
+          <li><strong>さきほどと同じ LINEビジネスID でログイン</strong>する</li>
+          <li>初回は開発者名とメールアドレスの登録を求められます。入れて進む</li>
+          <li>一覧に、さっき作った<strong>プロバイダー</strong>が出るので押す</li>
+          <li>その中の <strong>Messaging API</strong> のチャネル（アカウント名と同じ名前）を押す</li>
+        </ol>
+        <div class="note">
+          <span class="note__label">見つからないとき</span>
+          <p>プロバイダーが空っぽに見える場合、<strong>ログインしている ID が違います</strong>。
+          一度ログアウトして、公式アカウントを作ったときと同じ ID で入り直してください。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-6">
+      <div class="step__body">
+        <h3 class="step__title">チャネルシークレットを控える <span class="tag tag--manual">手でやる</span></h3>
+        <p><span class="oshint">LINE Developers Console</span></p>
+        <ol>
+          <li>上のタブから <strong>「チャネル基本設定」</strong> を選ぶ</li>
+          <li>画面を下にスクロールすると <strong>「チャネルシークレット」</strong> がある</li>
+          <li>横のコピーボタンで控える</li>
+        </ol>
+        <p>32文字くらいの英数字です。これが <code>LINE_CHANNEL_SECRET</code> になります。</p>
+        <div class="note note--alarm">
+          <span class="note__label">この値は人に見せない</span>
+          <p>チャットやメールに貼らないでください。あとで <code>.dev.vars</code> というファイルに直接書きます。
+          メモ帳に一時的に控えるのは構いませんが、<strong>終わったら消してください</strong>。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-7">
+      <div class="step__body">
+        <h3 class="step__title">アクセストークンを発行して控える <span class="tag tag--manual">手でやる</span></h3>
+        <p><span class="oshint">LINE Developers Console</span></p>
+        <ol>
+          <li>上のタブから <strong>「Messaging API設定」</strong> を選ぶ（さっきとは別のタブです）</li>
+          <li>いちばん下までスクロールする</li>
+          <li><strong>「チャネルアクセストークン（長期）」</strong> の <strong>「発行」</strong> ボタンを押す</li>
+          <li>長い文字列が出るので、コピーして控える</li>
+        </ol>
+        <p>これが <code>LINE_CHANNEL_ACCESS_TOKEN</code> です。<strong>200文字くらいあります。</strong>
+        途中で切れないよう、コピーボタンを使ってください。</p>
+        <div class="note">
+          <span class="note__label">控え損ねても大丈夫</span>
+          <p>同じ場所で<strong>「再発行」</strong>できます。ただし再発行すると<strong>古いほうは使えなくなります</strong>。
+          すでに動かしている環境がある場合、そちらが止まるので注意してください。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-8">
+      <div class="step__body">
+        <h3 class="step__title">Webhook URL は、まだ触らない <span class="tag tag--auto">コマンドがやる</span></h3>
+        <p><span class="oshint">LINE Developers Console</span></p>
+        <p>同じ「Messaging API設定」タブに <strong>Webhook URL</strong> という欄があります。
+        <strong>ここは空のままで構いません。</strong></p>
+        <p>あとで <code>npm run setup</code> が、出来上がったアドレスを自動で入れます。
+        いま手で入れても、まだ入れるべきアドレスが決まっていません。</p>
+        <div class="note">
+          <span class="note__label">あとで確認したくなったら</span>
+          <p>セットアップが終わったあと、この欄に <code>https://〇〇.workers.dev/line/webhook</code> が
+          入っていれば正しく設定されています。「検証」ボタンで確認もできます。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s1-9">
+      <div class="step__body">
+        <h3 class="step__title">自分のスマホで友だち追加する <span class="tag tag--manual">手でやる</span></h3>
+        <p><span class="oshint">LINE Official Account Manager</span></p>
+        <p>Manager の画面に <strong>QRコード</strong>（「友だち追加」「ホーム」あたり）があります。
+        スマホの LINE で読み取って、友だちになっておいてください。</p>
+        <p>まだ話しかけないでください。<strong>最初に送った人が「持ち主」として登録される</strong>ので、
+        手順06 で改めて送ります。</p>
+      </div>
+    </label>
+
+    <div class="note">
+      <span class="note__label">ここまでで手に入るもの</span>
+      <p>✅ LINE公式アカウント　✅ <code>LINE_CHANNEL_SECRET</code>　✅ <code>LINE_CHANNEL_ACCESS_TOKEN</code></p>
+      <p>この2つの値は、手順05 でファイルに貼るまで持っておいてください。</p>
+    </div>
+  </section>
+
+  <!-- ── 2 ─────────────────────────────────────────── -->
+  <section class="phase" id="p2">
+    <div class="phase__head">
+      <span class="phase__num">02</span>
+      <h2 class="phase__title">note のアカウントを作る</h2>
+      <span class="phase__time">5分</span>
+    </div>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s2-1">
+      <div class="step__body">
+        <h3 class="step__title">note に登録する <span class="tag tag--manual">手でやる</span></h3>
+        <p>
+          <a href="https://note.com/signup" target="_blank" rel="noopener">note.com</a> で、同じメールアドレスで登録します。
+          クリエイター名（URL に入る英数字）もここで決めます。
+        </p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s2-2">
+      <div class="step__body">
+        <h3 class="step__title">メール認証を完了する <span class="tag tag--manual">手でやる</span></h3>
+        <div class="note note--alarm">
+          <span class="note__label">飛ばすと後で必ず詰まる</span>
+          <p><strong>メール認証が済んでいないと、note は記事の投稿を受け付けません。</strong>
+          届いた確認メールのリンクを必ず開いてください。ここを忘れると、最後のテスト投稿で「メール認証が完了していません」と言われます。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s2-3">
+      <div class="step__body">
+        <h3 class="step__title">パソコンの Chrome でログインしたままにする <span class="tag tag--manual">手でやる</span></h3>
+        <p>あとで拡張機能をつなぐときに、ログイン済みの状態が必要です。ログアウトせずに置いておいてください。</p>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── 3 ─────────────────────────────────────────── -->
+  <section class="phase" id="p3">
+    <div class="phase__head">
+      <span class="phase__num">03</span>
+      <h2 class="phase__title">Claude の API キーを発行する</h2>
+      <span class="phase__time">5分</span>
+    </div>
+    <p class="phase__intro">
+      記事を書くのは Claude です。料金は使った分だけかかります。
+    </p>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s3-1">
+      <div class="step__body">
+        <h3 class="step__title">Anthropic Console に登録してキーを発行する <span class="tag tag--manual">手でやる</span></h3>
+        <p>
+          <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>
+          で登録し、クレジットを購入してから API キーを発行します。<code>sk-ant-</code> で始まる文字列です。
+        </p>
+        <div class="note note--alarm">
+          <span class="note__label">Pro / Max のプランは使えません</span>
+          <p>個人向けの Claude Pro / Max を、こうした仕組みの裏側で使うことは Anthropic の規約で禁止されています。
+          <strong>Console で発行する従量課金のキー</strong>を使ってください。</p>
+        </div>
+        <p>目安の費用は、記事1本あたり <strong>Sonnet 5 で約34円</strong>、<strong>Haiku 4.5 で約4円</strong>です。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s3-2">
+      <div class="step__body">
+        <h3 class="step__title">ワークスペースIDを確認する（該当する場合のみ） <span class="tag tag--manual">手でやる</span></h3>
+        <p>
+          キーを特定のワークスペースに紐づけた場合は、Settings → Workspaces にある
+          <code>wrkspc_</code> で始まる ID も控えてください。紐づけていなければ不要です。
+        </p>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── 準備（ターミナル）───────────────────────────── -->
+  <section class="phase" id="pready">
+    <div class="phase__head">
+      <span class="phase__num">準備</span>
+      <h2 class="phase__title">パソコンの準備（ターミナルを開く）</h2>
+      <span class="phase__time">10分</span>
+    </div>
+    <p class="phase__intro">
+      ここから先は「ターミナル」という画面を使います。触ったことがなくても大丈夫です。
+      <strong>文字をコピーして貼り付けて、Enter を押すだけ</strong>で、打ち込む場面はありません。
+      右上の <strong>Mac / Windows</strong> を、お使いのパソコンに合わせて切り替えてください。
+    </p>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="sr-1">
+      <div class="step__body">
+        <h3 class="step__title">ターミナルを開く <span class="tag tag--manual">手でやる</span></h3>
+
+        <div data-os="mac">
+          <span class="oshint">Mac</span>
+          <ol>
+            <li>キーボードの <strong>⌘（コマンド）</strong> と <strong>スペース</strong> を同時に押す</li>
+            <li>出てきた検索窓に <strong>ターミナル</strong> と入力して <strong>Enter</strong></li>
+          </ol>
+          <p>白い（または黒い）窓が開き、文字が1行だけ出ていれば成功です。</p>
+        </div>
+
+        <div data-os="win">
+          <span class="oshint">Windows</span>
+          <ol>
+            <li>画面左下の <strong>スタートボタン</strong>（Windows のマーク）を押す</li>
+            <li>そのまま <strong>powershell</strong> と入力する</li>
+            <li>出てきた <strong>Windows PowerShell</strong> を選んで Enter</li>
+          </ol>
+          <p>青い（または黒い）窓が開き、文字が1行だけ出ていれば成功です。</p>
+        </div>
+
+        <div class="note">
+          <span class="note__label">この画面の使い方は3つだけ</span>
+          <p><strong>貼り付け</strong>：<span data-os="mac">⌘ + V</span><span data-os="win">Ctrl + V（または右クリック）</span>　
+          <strong>実行</strong>：Enter　
+          <strong>止める</strong>：Ctrl + C</p>
+          <p>実行すると文字がたくさん流れます。これは正常です。止まって、また文字が入力できる状態に戻ったら終わりの合図です。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="sr-2">
+      <div class="step__body">
+        <h3 class="step__title">Node.js を入れる <span class="tag tag--manual">手でやる</span></h3>
+        <p>このシステムを動かすための土台です。1回入れれば、以後は不要です。</p>
+        <ol>
+          <li><a href="https://nodejs.org/ja" target="_blank" rel="noopener">nodejs.org</a> を開く</li>
+          <li><strong>LTS</strong> と書かれたほうのボタンを押してダウンロードする（もう一方は開発者向けです）</li>
+          <li data-os="mac">ダウンロードした <code>.pkg</code> をダブルクリックし、「続ける」を押していく</li>
+          <li data-os="win">ダウンロードした <code>.msi</code> をダブルクリックし、「Next」を押していく（途中の設定は変えなくて大丈夫です）</li>
+        </ol>
+        <p><strong>入れ終わったら、ターミナルを一度閉じて開き直してください。</strong>そのうえで次を貼り付けて Enter。</p>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>node -v</code></div>
+        </div>
+        <p><code>v22.14.0</code> のように <strong>v で始まる数字</strong>が出れば成功です。</p>
+        <div class="note">
+          <span class="note__label">「見つかりません」と言われたら</span>
+          <p>ターミナルを閉じて開き直していない可能性が高いです。<span data-os="mac">それでも駄目なら、Mac を再起動してからもう一度試してください。</span><span data-os="win">それでも駄目なら、パソコンを再起動してからもう一度試してください。</span></p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="sr-3">
+      <div class="step__body">
+        <h3 class="step__title">プロジェクトのフォルダを開く <span class="tag tag--manual">手でやる</span></h3>
+        <p>お渡ししたフォルダ（zip で受け取った場合は展開したもの）を、ターミナルに教えます。
+        <strong>ここから先のコマンドは、すべてこのフォルダの中で実行します。</strong></p>
+        <div class="note note--alarm">
+          <span class="note__label">拡張機能のフォルダとは別物です</span>
+          <p>あとで手順07に <code>note-connect</code> という別のフォルダが出てきますが、<strong>それではありません</strong>。
+          ここで開くのは<strong>システム本体のフォルダ</strong>で、中に <code>package.json</code> というファイルがあるほうです。</p>
+        </div>
+
+        <div data-os="mac">
+          <span class="oshint">Mac</span>
+          <ol>
+            <li>zip の場合はダブルクリックして展開する</li>
+            <li>ターミナルに <code>cd </code> と入力する（<strong>cd のあとに半角スペース1つ</strong>）</li>
+            <li>フォルダを Finder からターミナルの窓へ<strong>ドラッグ＆ドロップ</strong>する（場所が自動で入ります）</li>
+            <li>Enter を押す</li>
+          </ol>
+        </div>
+
+        <div data-os="win">
+          <span class="oshint">Windows</span>
+          <ol>
+            <li>zip の場合は右クリック →「すべて展開」で展開する</li>
+            <li>展開したフォルダを開く（中に <code>package.json</code> が見える場所）</li>
+            <li>上の<strong>アドレスバー</strong>（場所が書いてある帯）をクリックし、そこに <strong>powershell</strong> と入力して Enter</li>
+          </ol>
+          <p>そのフォルダの場所で PowerShell が開きます。この方法なら場所を打ち込まずに済みます。</p>
+        </div>
+
+        <p>合っているか確かめます。</p>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll" data-os="mac"><code>ls package.json</code></div>
+          <div class="cmd__scroll" data-os="win"><code>dir package.json</code></div>
+        </div>
+        <p><code>package.json</code> という名前が表示されれば、正しい場所にいます。</p>
+        <p><strong>「そのようなファイルはありません（No such file or directory）」と出たら、フォルダが違います。</strong>
+        システム本体のフォルダ（<code>src</code>・<code>migrations</code>・<code>package.json</code> が並んでいるところ）を選び直してください。</p>
+
+        <div class="note note--alarm">
+          <span class="note__label">ここを間違えると、あとの手順が全部空振りします</span>
+          <p>ターミナルを閉じると場所の記憶も消えます。<strong>途中で閉じてしまったら、この手順をもう一度やってから続けてください。</strong></p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="sr-4">
+      <div class="step__body">
+        <h3 class="step__title">部品をそろえる <span class="tag tag--auto">コマンドがやる</span></h3>
+        <p>このシステムが使う道具一式を、フォルダの中に取り込みます。1〜2分かかります。</p>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>npm install</code></div>
+        </div>
+        <p>途中で警告（<code>warn</code>）が出ることがありますが、最後まで進んで入力できる状態に戻れば成功です。</p>
+        <div class="note">
+          <span class="note__label">先にやっておく理由</span>
+          <p>これを飛ばすと、あとのコマンドのたびに「インストールしていいか」と聞かれて時間がかかります。
+          先にそろえておけば、動くバージョンも固定されます。</p>
+        </div>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── 4 ─────────────────────────────────────────── -->
+  <section class="phase" id="p4">
+    <div class="phase__head">
+      <span class="phase__num">04</span>
+      <h2 class="phase__title">Cloudflare に置き場所を作る</h2>
+      <span class="phase__time">10分</span>
+    </div>
+    <p class="phase__intro">
+      システム本体を動かす場所です。無料枠の範囲で足ります。ここからはターミナルを使うので、<a href="#pready">「パソコンの準備」</a>を先に済ませておいてください。
+    </p>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s4-1">
+      <div class="step__body">
+        <h3 class="step__title">Cloudflare に登録する <span class="tag tag--manual">手でやる</span></h3>
+        <p>
+          <a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener">dash.cloudflare.com</a>
+          で、同じメールアドレスで登録します。支払い情報の入力は不要です。
+        </p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s4-2">
+      <div class="step__body">
+        <h3 class="step__title">パソコンから Cloudflare にログインする <span class="tag tag--auto">コマンドがやる</span></h3>
+        <p>ブラウザが開いて承認を求められます。<strong>いま作った Cloudflare アカウント</strong>で承認してください。</p>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>npx wrangler login</code></div>
+        </div>
+        <p>ブラウザに「Successfully logged in」と出れば完了です。ターミナルに戻ってください。</p>
+
+        <div class="note note--alarm">
+          <span class="note__label">このパソコンで、すでに別の Cloudflare を使っている場合だけ</span>
+          <p>そのままログインすると、<strong>元のログインが上書きされます</strong>。
+          分けたいときは <code>npx wrangler login</code> の代わりに、次の<strong>2つを両方</strong>実行してください。</p>
+          <p><strong>1つめ</strong>：ログインに名前を付けて作る（ブラウザが開きます）</p>
+        </div>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>npx wrangler auth create rehearsal</code></div>
+        </div>
+        <div class="note note--alarm">
+          <p><strong>2つめ</strong>：そのログインを<strong>このフォルダに紐づける</strong>。
+          ★ここを忘れると、名前付きのログインは作られたのに使われず、
+          <strong>元のアカウントのまま作業が進みます</strong>（エラーは出ません）。</p>
+        </div>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>npx wrangler auth activate rehearsal</code></div>
+        </div>
+        <p><code>Profile "rehearsal" activated for ...</code> と出れば紐づけ完了です。
+        <code>npx wrangler auth list</code> の「Bound Directories」にフォルダ名が入っていることでも確認できます。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s4-1b">
+      <div class="step__body">
+        <h3 class="step__title">workers.dev のアドレスを登録する <span class="tag tag--manual">手でやる</span></h3>
+        <p>Cloudflare で<strong>自分用のアドレス</strong>を1つ決めます。<strong>アカウントを作った直後の1回だけ</strong>です。</p>
+        <ol>
+          <li><a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">dash.cloudflare.com</a> を開く（さっき作ったアカウントで）</li>
+          <li>左のメニューの <strong>コンピュート</strong>（英語表示なら Compute）→ <strong>Workers とページ</strong> を開く</li>
+          <li>画面の <strong>「サブドメイン」</strong> の欄で <strong>変更（Change）</strong> を押す</li>
+          <li>好きな名前を入れて登録する（例：<code>my-company</code>。他の人と重複しない名前）</li>
+        </ol>
+        <p>ここで決めた名前は、あとで出てくる URL の一部になります。</p>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>https://〇〇（決めた名前）.workers.dev</code></div>
+        </div>
+        <div class="note note--alarm">
+          <span class="note__label">これを飛ばすと、あとで必ず止まります</span>
+          <p>登録していないと、システムを配置する段階で
+          <code>You need to register a workers.dev subdomain</code> と出て進めません。
+          そのときはこのページに戻って登録し、<code>npm run setup</code> をやり直せば大丈夫です。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s4-2b">
+      <div class="step__body">
+        <h3 class="step__title">どのアカウントに繋がっているか確かめる <span class="tag tag--auto">コマンドがやる</span></h3>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>npx wrangler whoami</code></div>
+        </div>
+        <p>表示されるメールアドレスが、<strong>いま登録したアカウントのもの</strong>であることを必ず確認してください。</p>
+        <p>★<strong>必ずプロジェクトのフォルダの中で実行してください。</strong>
+        ログインはフォルダごとに紐づくので、別の場所で実行すると違う答えが返ります。</p>
+        <div class="note note--alarm">
+          <span class="note__label">ここを飛ばすと気づけません</span>
+          <p>違うアカウントのまま次へ進むと、データベースも Worker も<strong>別のアカウントの中に作られます</strong>。
+          しかもエラーにならないので、あとから気づくのが難しくなります。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s4-3">
+      <div class="step__body">
+        <h3 class="step__title">データベースと保管庫を作る <span class="tag tag--auto">コマンドがやる</span></h3>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>npx wrangler d1 create note-line-poster-2
+npx wrangler kv namespace create KV</code></div>
+        </div>
+        <p>それぞれ <strong>ID が表示されます</strong>。次の手順で貼るので控えてください。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s4-4">
+      <div class="step__body">
+        <h3 class="step__title">wrangler.jsonc に3か所貼る <span class="tag tag--manual">手でやる</span></h3>
+        <p><code>wrangler.jsonc</code> を開いて、次の3つを書き換えます。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>場所</th><th>入れる値</th></tr></thead>
+            <tbody>
+              <tr><td>name</td><td>note-line-poster-2（好きな名前。<strong>URL になります</strong>）</td></tr>
+              <tr><td>database_name / database_id</td><td>d1 create の出力</td></tr>
+              <tr><td>kv_namespaces の id</td><td>kv namespace create の出力</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll" data-os="mac"><code>open -e wrangler.jsonc</code></div>
+          <div class="cmd__scroll" data-os="win"><code>notepad wrangler.jsonc</code></div>
+        </div>
+        <p>テキストエディタで開きます。書き換えたら<strong>保存して閉じてください</strong>
+        （<span data-os="mac">⌘ + S</span><span data-os="win">Ctrl + S</span>）。</p>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── 5 ─────────────────────────────────────────── -->
+  <section class="phase" id="p5">
+    <div class="phase__head">
+      <span class="phase__num">05</span>
+      <h2 class="phase__title">値をまとめて、動かす</h2>
+      <span class="phase__time">5分</span>
+    </div>
+    <p class="phase__intro">
+      ここからはコマンド1本です。集めた値を1つのファイルに貼れば、あとは全部やってくれます。
+    </p>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s5-1">
+      <div class="step__body">
+        <h3 class="step__title">.dev.vars を作って貼る <span class="tag tag--manual">手でやる</span></h3>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll" data-os="mac"><code>cp .dev.vars.example .dev.vars
+open -e .dev.vars</code></div>
+          <div class="cmd__scroll" data-os="win"><code>copy .dev.vars.example .dev.vars
+notepad .dev.vars</code></div>
+        </div>
+        <p>1行目でひな形をコピーし、2行目でそれを開きます。</p>
+        <p>控えておいた値を、対応する行に貼ります。<code>=</code> の右側に、引用符なしで書いてください。</p>
+        <ul>
+          <li><code>LINE_CHANNEL_SECRET</code> と <code>LINE_CHANNEL_ACCESS_TOKEN</code></li>
+          <li><code>ANTHROPIC_API_KEY</code>（必要なら <code>ANTHROPIC_WORKSPACE_ID</code> も）</li>
+          <li>それ以外は<strong>空のままで大丈夫</strong>です</li>
+        </ul>
+        <div class="note">
+          <span class="note__label">このファイルは外に出ません</span>
+          <p><code>.dev.vars</code> は Git の対象外にしてあります。チャットやメールに貼らず、このファイルにだけ書いてください。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s5-2">
+      <div class="step__body">
+        <h3 class="step__title">セットアップを走らせる <span class="tag tag--auto">コマンドがやる</span></h3>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>npm run setup</code></div>
+        </div>
+        <p>ここで一気に次のことが起きます。</p>
+        <ul>
+          <li>足りない値の点検（足りなければ、取り方を教えて止まります）</li>
+          <li>暗号化の鍵を生成</li>
+          <li>Cloudflare に設定値を反映</li>
+          <li>データベースの更新 → 配備</li>
+          <li><strong>LINE の Webhook 設定と疎通テスト</strong></li>
+          <li><strong>リッチメニューの作成・画像のアップロード・既定への設定</strong></li>
+          <li>動作確認</li>
+        </ul>
+        <p>最後に <strong>Worker の URL</strong> が表示されます。次で使うので控えてください。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s5-3">
+      <div class="step__body">
+        <h3 class="step__title">緑のチェックが並んでいることを確認する <span class="tag tag--auto">コマンドがやる</span></h3>
+        <p>最後の「動作確認」に <code>d1: ok</code> などが並びます。
+        <code>note_session: none</code> だけは<strong>まだ note と繋いでいないので、この時点では正常</strong>です。
+        「システムは動いています。あとは note と連携するだけです」と出れば成功です。</p>
+        <div class="note">
+          <span class="note__label">「接続できませんでした」と出たとき</span>
+          <p><strong>失敗とは限りません。</strong>workers.dev のアドレスを登録した直後は、
+          そのアドレスが世界中に行き渡るまで数分かかります。
+          <strong>2〜3分おいて <code>npm run setup</code> をもう一度</strong>実行すれば通ります。
+          （疎通テストも同じ理由で失敗表示になることがあります）</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s5-4">
+      <div class="step__body">
+        <h3 class="step__title">★あなたの URL を控える <span class="tag tag--manual">手でやる</span></h3>
+        <p>セットアップの途中に、こういう行が出ています。<strong>この URL は人それぞれ違います。</strong></p>
+        <div class="cmd">
+          <div class="cmd__scroll"><code>✓ URL を確認しました: https://note-line-poster.〇〇.workers.dev</code></div>
+        </div>
+        <p><strong>これがあなたのシステムの住所です。</strong>このあと手順07 で使うので、メモ帳などに控えてください。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>URL の作られ方</th><th>どこで決めたか</th></tr></thead>
+            <tbody>
+              <tr><td><code>https://</code></td><td>固定</td></tr>
+              <tr><td>note-line-poster…</td><td><strong>04 で <code>wrangler.jsonc</code> の <code>name</code> に入れた名前</strong></td></tr>
+              <tr><td>.〇〇</td><td><strong>04 で登録した workers.dev のアドレス</strong></td></tr>
+              <tr><td>.workers.dev</td><td>固定</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>見失ったときの調べ方</strong>（どれでも同じ答えが出ます）</p>
+        <ul>
+          <li>もう一度 <code>npm run setup</code> を実行すると、また表示されます</li>
+          <li>Cloudflare のダッシュボード → <strong>コンピュート → Workers とページ</strong> → 一覧に出ている名前をクリック</li>
+          <li>LINE Developers Console →「Messaging API設定」→ <strong>Webhook URL</strong> の
+          <code>/line/webhook</code> より前の部分</li>
+        </ul>
+        <div class="note note--alarm">
+          <span class="note__label">この URL は、正しく貼らないと動きません</span>
+          <p>手順07 でこの URL を拡張機能に埋め込みます。
+          <strong>「https://〇〇.workers.dev」のような例文をそのまま貼らないでください。</strong>
+          貼ると「サーバーに接続できませんでした」と言われます。</p>
+        </div>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── 6 ─────────────────────────────────────────── -->
+  <section class="phase" id="p6">
+    <div class="phase__head">
+      <span class="phase__num">06</span>
+      <h2 class="phase__title">持ち主として名乗る</h2>
+      <span class="phase__time">1分</span>
+    </div>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s6-1">
+      <div class="step__body">
+        <h3 class="step__title">LINE のトークに何か1通送る <span class="tag tag--manual">手でやる</span></h3>
+        <p>「こんにちは」でも構いません。<strong>最初に送った人が、このアカウントの持ち主として自動で登録されます。</strong></p>
+        <div class="note note--alarm">
+          <span class="note__label">やり直しがきかない項目</span>
+          <p>記事を公開できるのは、この人だけになります。他人が勝手に公開できないようにするための仕組みなので、<strong>一度登録すると上書きされません。</strong>
+          必ず、運用する本人の LINE から送ってください。</p>
+        </div>
+        <p>「このアカウントの持ち主として登録しました」と返ってくれば成功です。画面下にメニューも出ます（出ないときは、一度トークを閉じて開き直してください）。</p>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── 7 ─────────────────────────────────────────── -->
+  <section class="phase" id="p7">
+    <div class="phase__head">
+      <span class="phase__num">07</span>
+      <h2 class="phase__title">note とつなぐ</h2>
+      <span class="phase__time">5分</span>
+    </div>
+    <p class="phase__intro">
+      note には外部連携の仕組みがないので、専用の小さなツール（Chrome 拡張）で一度だけつなぎます。
+      パスワードは使いません。つないだあとは、このツールを開いたままにする必要はありません。
+    </p>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s7-1">
+      <div class="step__body">
+        <h3 class="step__title">接続先を焼き込んだ拡張を作る <span class="tag tag--auto">コマンドがやる</span></h3>
+        <p><strong><a href="#p5">05 で控えた、あなたの URL</a></strong> に置き換えて実行します。</p>
+        <div class="cmd">
+          <button class="cmd__copy" type="button">コピー</button>
+          <div class="cmd__scroll"><code>npm run ext:package -- --url https://ここをあなたのURLに置き換える</code></div>
+        </div>
+        <div class="note note--alarm">
+          <span class="note__label">★ここが一番間違えやすい</span>
+          <p>コピーしたまま実行すると、<strong>「ここをあなたのURLに置き換える」という文字がそのまま埋め込まれます</strong>。
+          エラーにならず作成に成功してしまうので気づけません。あとで拡張が
+          「サーバーに接続できませんでした」と言い出します。</p>
+          <p>実行後、こう表示されることを<strong>目で確認してください</strong>。</p>
+        </div>
+        <div class="cmd">
+          <div class="cmd__scroll"><code>接続先を焼き込みました: https://（あなたのURL）.workers.dev</code></div>
+        </div>
+        <p><code>dist/note-connect.zip</code> ができます。これが Chrome に入れるものです。</p>
+        <div class="note">
+          <span class="note__label">フォルダは移動しません</span>
+          <p>このコマンドも<strong>システム本体のフォルダのまま</strong>実行します。
+          <code>note-connect</code> は次の手順で Chrome に読み込ませるだけで、ターミナルでそこへ移動する必要はありません。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s7-2">
+      <div class="step__body">
+        <h3 class="step__title">Chrome に読み込む <span class="tag tag--manual">手でやる</span></h3>
+        <ul>
+          <li data-os="mac"><code>dist</code> フォルダの中の zip をダブルクリックして展開する（<strong>できたフォルダは消さないでください</strong>）</li>
+          <li data-os="win"><code>dist</code> フォルダの中の zip を右クリック →「すべて展開」で展開する（<strong>できたフォルダは消さないでください</strong>）</li>
+          <li>アドレス欄に <code>chrome://extensions</code> と入れて開く</li>
+          <li>右上の<strong>デベロッパーモード</strong>をオンにする</li>
+          <li>「パッケージ化されていない拡張機能を読み込む」→ 展開したフォルダを選ぶ</li>
+        </ul>
+        <p>右上に緑の「n」アイコンが増えます。パズルのピースから<strong>ピン留め</strong>しておくと押しやすくなります。</p>
+        <div class="note">
+          <span class="note__label">「サーバーに接続できませんでした」と出たら</span>
+          <p>拡張の中の接続先が間違っています。<strong>作り直さなくても、その場で直せます。</strong></p>
+          <ol>
+            <li>拡張のいちばん下 <strong>「▼ 接続先の設定」</strong> を開く</li>
+            <li><strong>「サーバーのURL」</strong>に、あなたの URL を貼り直す</li>
+            <li><strong>「保存する」</strong>を押す</li>
+          </ol>
+          <p>ここに <code>https://新しいWorkerのURL</code> のような文字が入っていたら、
+          それが原因です。</p>
+        </div>
+        <div class="note note--alarm">
+          <span class="note__label">古い拡張が残っていないか</span>
+          <p>作り直して読み込むと、<strong>同じ拡張が2つ並ぶことがあります</strong>。
+          古いほうは <code>chrome://extensions</code> から<strong>削除してください</strong>。
+          残っていると、どちらを押しているか分からなくなります。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s7-3">
+      <div class="step__body">
+        <h3 class="step__title">LINE で「note連携」と送る <span class="tag tag--manual">手でやる</span></h3>
+        <p>8桁のコード（例：<code>ABCD-2345</code>）が返ってきます。<strong>15分で切れます</strong>ので、そのまま次へ進んでください。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s7-4">
+      <div class="step__body">
+        <h3 class="step__title">拡張にコードを貼る <span class="tag tag--manual">手でやる</span></h3>
+        <p>
+          緑の「n」を押す → 「note にログイン済みです」と緑の丸が出ていることを確認 →
+          コードを貼って「note と連携する」。
+        </p>
+        <p><strong>LINE にも完了のお知らせが届けば成功です。</strong></p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s7-5">
+      <div class="step__body">
+        <h3 class="step__title">投稿する場所を確かめる <span class="tag tag--manual">手でやる</span></h3>
+        <p>
+          既定では<strong>このサーバーから投稿します</strong>。パソコンを開いていなくても投稿できます。
+          いま作ったこの環境は使う人ひとり専用なので、ログイン情報がほかの人と混ざることはありません。
+        </p>
+        <p>
+          変えたいときは LINE で <strong>「投稿設定」</strong> → 「投稿する場所」。
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>選択肢</th><th>どうなるか</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>このサーバーから（既定）</td>
+                <td>パソコンを開いていなくても投稿できる。ログイン情報はこの環境の中に暗号化して保存される</td>
+              </tr>
+              <tr>
+                <td>自分のパソコンから</td>
+                <td>note から見てパソコンからの投稿になる。ログイン情報を保存せずに済むが、Chrome を閉じている間は投稿が待機になる</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>通常は既定のままで構いません。この手順は<strong>確認だけ</strong>です。</p>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── 8 ─────────────────────────────────────────── -->
+  <section class="phase" id="p8">
+    <div class="phase__head">
+      <span class="phase__num">08</span>
+      <h2 class="phase__title">1本通してみる</h2>
+      <span class="phase__time">10分</span>
+    </div>
+    <p class="phase__intro">
+      いきなり公開せず、下書きで形を確かめてから公開します。note への公開は取り消せません。
+    </p>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s8-1">
+      <div class="step__body">
+        <h3 class="step__title">記事を作らせる <span class="tag tag--manual">手でやる</span></h3>
+        <p>メニュー左の<strong>「記事を作成する」</strong>を押して、ネタを送ります。1〜3分でプレビューが返ってきます。</p>
+        <p>先にメニュー中央の<strong>「プロフィールを登録する」</strong>で商売の内容を登録しておくと、同じネタでも記事の中身が変わります。効果を見たいなら、登録前後で2本試すとよく分かります。</p>
+        <div class="note"><strong>ボタンの文言について</strong>：この機能は中身を作り直して「ナレッジ」と呼んでいますが、メニュー画像の文言は「プロフィール登録」のままです。どちらの言い方でも反応します。</div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s8-2">
+      <div class="step__body">
+        <h3 class="step__title">まず「下書きに保存する」で確かめる <span class="tag tag--manual">手でやる</span></h3>
+        <p>返ってきた編集用のリンクを開いて、見出しや画像の位置が崩れていないか目で見てください。下書きは他の人からは見えません。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s8-3">
+      <div class="step__body">
+        <h3 class="step__title">「公開する」まで通す <span class="tag tag--manual">手でやる</span></h3>
+        <p>URL が LINE に届きます。シークレットウィンドウで開いて、<strong>他の人からも見えること</strong>を確かめてください。</p>
+        <p>パソコンを閉じていても投稿されます。試しに Chrome を終了してから公開してみると、動きが確かめられます。</p>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s8-4">
+      <div class="step__body">
+        <h3 class="step__title">テスト記事を消す <span class="tag tag--manual">手でやる</span></h3>
+        <p>note の画面から削除してください。テスト投稿を残さないようにします。</p>
+      </div>
+    </label>
+  </section>
+
+  <!-- ── つまずいたら ──────────────────────────────── -->
+  <section class="phase" id="trouble">
+    <div class="phase__head">
+      <span class="phase__num">—</span>
+      <h2 class="phase__title">つまずいたら</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>症状</th><th>原因と対処</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>デプロイで <code>You need to register a workers.dev subdomain</code></td>
+            <td>Cloudflare で自分用のアドレスを登録していません。ダッシュボード →
+            <strong>コンピュート → Workers とページ →「サブドメイン」の変更</strong>で登録し、
+            <code>npm run setup</code> をやり直す</td>
+          </tr>
+          <tr>
+            <td>疎通テスト <code>COULD_NOT_CONNECT</code> ／「Worker に接続できませんでした」</td>
+            <td>アドレス登録の直後は行き渡るまで数分かかります。<strong>2〜3分おいて <code>npm run setup</code> をやり直す</strong>。
+            それでも駄目なら、ブラウザで <code>https://あなたのURL/</code> を開いて表示されるか確認</td>
+          </tr>
+          <tr>
+            <td>拡張が「サーバーに接続できませんでした」</td>
+            <td>接続先が違います。拡張の <strong>「▼ 接続先の設定」→ サーバーのURL</strong> に
+            正しい URL を貼って「保存する」。例文のまま埋め込まれているのが原因のことが多いです</td>
+          </tr>
+          <tr>
+            <td><code>Couldn't find a D1 DB with the name or binding</code></td>
+            <td><code>wrangler.jsonc</code> の <code>database_name</code> / <code>database_id</code> が
+            04 で作ったものと合っていません。<code>npx wrangler d1 list</code> で正しい値を確認して貼り直す</td>
+          </tr>
+          <tr>
+            <td>作ったはずのデータベースが見つからない</td>
+            <td>別の Cloudflare アカウントに作られています。プロジェクトのフォルダで
+            <code>npx wrangler whoami</code> を実行し、意図したアカウントか確認してください</td>
+          </tr>
+          <tr>
+            <td><code>npm install</code> で <code>EACCES</code> / <code>permission denied</code> と出る</td>
+            <td>過去に <code>sudo npm</code> を使ったせいで、npm の作業用フォルダが管理者のものになっています。
+            <code>sudo chown -R $(id -u):$(id -g) ~/.npm</code> を実行し、パソコンのパスワードを入れてください（1回で直ります）</td>
+          </tr>
+          <tr>
+            <td><code>npm</code> や <code>node</code> が見つからない、と出る</td>
+            <td>Node.js を入れたあとターミナルを開き直していません。一度閉じて開き直してください</td>
+          </tr>
+          <tr>
+            <td>「そのようなファイルはありません」と出る</td>
+            <td>ターミナルがプロジェクトのフォルダにいません。<a href="#pready">「パソコンの準備」</a>の3つめをやり直してください</td>
+          </tr>
+          <tr>
+            <td>送っても何も返ってこない</td>
+            <td>応答設定の Webhook がオフ。<code>01</code> の応答設定を見直してください</td>
+          </tr>
+          <tr>
+            <td>定型文と AI の返信が両方来る</td>
+            <td>応答メッセージがオン。オフにしてください</td>
+          </tr>
+          <tr>
+            <td>メニューが出ない</td>
+            <td>トークを一度閉じて開き直す。それでも出なければ <code>npm run setup:line</code></td>
+          </tr>
+          <tr>
+            <td>連携コードが違うと言われる</td>
+            <td>15分で切れます。LINE でもう一度「note連携」と送って新しいコードで</td>
+          </tr>
+          <tr>
+            <td>メール認証が完了していません</td>
+            <td>note の確認メールを開いていません。<code>02</code> に戻ってください</td>
+          </tr>
+          <tr>
+            <td>公開を押したのに投稿されない</td>
+            <td>note のログインが切れている可能性があります。LINE で「連携状況」を確認してください</td>
+          </tr>
+          <tr>
+            <td>拡張のアイコンに「!」が出る</td>
+            <td>連携が切れています。LINE で「note連携」からやり直してください</td>
+          </tr>
+          <tr>
+            <td>いまの状態を知りたい</td>
+            <td>LINE で「連携状況」。技術的には <code>/health</code> を開くと全項目が見えます</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="outro prose">
+    <h2>結局、人の手が要るのは5つだけ</h2>
+    <p>
+      LINE公式アカウントの開設、鍵の貼り付け、応答メッセージのオフ、Claude のキー発行、
+      そして note へのログイン。<strong>このうち4つは初回だけ</strong>で、日常的に発生するのは
+      最後の1つ（月1回ほどのつなぎ直し）だけです。それも3手で終わります。
+    </p>
+    <p>
+      残りは全部 <code>npm run setup</code> がやります。どのサービスも「アカウントを作る」「本人としてログインする」
+      「鍵を発行する」の3つには API を用意していません。意図的にそうしている部分なので、迂回はしません。
+    </p>
+  </section>
+
+</div>
+
+<script>
+  // ── 進み具合を覚えておく ───────────────────────────
+  // 途中で閉じても続きから再開できるようにする。
+  // 保存できない環境（プライベートウィンドウなど）でも、
+  // チェック自体は普通に使えるようにしておく。
+  var KEY = "nlp-setup-progress";
+  var boxes = Array.prototype.slice.call(document.querySelectorAll(".step__check"));
+  var fill = document.getElementById("fill");
+  var count = document.getElementById("count");
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function save(state) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch (e) {
+      /* 保存できなくても操作は続けられる */
+    }
+  }
+
+  // いま表示されている作業だけを数える（選んでいない OS の分は数えない）
+  function visibleBoxes() {
+    return boxes.filter(function (b) {
+      var owner = b.closest("[data-os]");
+      return !owner || !owner.classList.contains("is-hidden");
+    });
+  }
+
+  function render() {
+    var shown = visibleBoxes();
+    var done = shown.filter(function (b) { return b.checked; }).length;
+    count.textContent = done + " / " + shown.length;
+    fill.style.transform = "scaleX(" + (shown.length ? done / shown.length : 0) + ")";
+  }
+
+  // ── Mac / Windows の切替 ───────────────────────────
+  // 覚えられない環境でも、既定（Mac）で普通に読めるようにしておく。
+  var OS_KEY = "nlp-setup-os";
+  var osButtons = Array.prototype.slice.call(document.querySelectorAll("#osw button"));
+
+  function applyOs(os) {
+    document.querySelectorAll("[data-os]").forEach(function (el) {
+      el.classList.toggle("is-hidden", el.dataset.os !== os);
+    });
+    osButtons.forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.pick === os));
+    });
+    render();
+  }
+
+  function guessOs() {
+    try {
+      var saved = localStorage.getItem(OS_KEY);
+      if (saved === "mac" || saved === "win") return saved;
+    } catch (e) { /* 読めなくても既定で動く */ }
+    return /Win/i.test(navigator.platform || navigator.userAgent) ? "win" : "mac";
+  }
+
+  osButtons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      try { localStorage.setItem(OS_KEY, b.dataset.pick); } catch (e) { /* 保存できなくてよい */ }
+      applyOs(b.dataset.pick);
+    });
+  });
+
+  var state = load();
+  boxes.forEach(function (box) {
+    if (state[box.dataset.step]) box.checked = true;
+    box.addEventListener("change", function () {
+      state[box.dataset.step] = box.checked;
+      save(state);
+      render();
+    });
+  });
+  applyOs(guessOs());
+
+  document.getElementById("reset").addEventListener("click", function () {
+    boxes.forEach(function (b) { b.checked = false; });
+    state = {};
+    save(state);
+    render();
+  });
+
+  // ── コマンドのコピー ───────────────────────────────
+  document.querySelectorAll(".cmd__copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      // Mac / Windows で内容が違う場合があるので、いま表示されているほうを取る
+      var shown = Array.prototype.slice.call(btn.parentElement.querySelectorAll("code"))
+        .filter(function (c) {
+          var owner = c.closest("[data-os]");
+          return !owner || !owner.classList.contains("is-hidden");
+        });
+      var code = shown.length ? shown[0].textContent : "";
+      navigator.clipboard.writeText(code).then(function () {
+        btn.textContent = "コピーしました";
+        btn.dataset.copied = "1";
+        setTimeout(function () {
+          btn.textContent = "コピー";
+          btn.dataset.copied = "";
+        }, 1600);
+      }).catch(function () {
+        btn.textContent = "コピーできません";
+        setTimeout(function () { btn.textContent = "コピー"; }, 1600);
+      });
+    });
+  });
+</script>
