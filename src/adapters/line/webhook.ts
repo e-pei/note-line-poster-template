@@ -41,6 +41,9 @@ import {
 import { KvImageStore } from '../../ports/storage/images';
 import { newId } from '../../lib/id';
 import { log } from '../../lib/mask';
+import { canUse, NOT_OWNER_MESSAGE } from '../../core/line/access';
+import { issueSetupCode } from '../../core/setup/state';
+import { resolveMasterKey } from '../../core/setup/masterkey';
 
 /** ネタとして受け付ける最短の長さ。これ未満は雑談として扱う。 */
 const MIN_IDEA_LENGTH = 10;
@@ -130,6 +133,19 @@ async function handleEvent(event: LineEvent, env: Env): Promise<void> {
     )]);
   }
 
+  // ★持ち主以外は、ここから先へ通さない（2026-08-31 源蔵レビュー指摘）。
+  //   公開だけを守っていたが、記事生成は毎回 Claude を呼ぶ＝顧客の残高が減る。
+  //   ナレッジを書き換えられると、以後の記事すべてに影響が残る。
+  //   友だち追加さえすれば誰でもできる状態だった。
+  if (!canUse(d.ownerLineUserId, userId)) {
+    log.warn('持ち主以外からの操作を断りました');
+    const token = event.replyToken;
+    if (token && (event.type === 'message' || event.type === 'postback')) {
+      await line.reply(token, [text(NOT_OWNER_MESSAGE)]);
+    }
+    return;
+  }
+
   switch (event.type) {
     case 'follow':
       await line.reply(event.replyToken!, [
@@ -215,6 +231,12 @@ async function handleText(
   }
   if (COMMANDS.disconnect.test(cmd)) {
     return doDisconnect(env, line, d, replyToken, userId);
+  }
+  if (COMMANDS.setupCode.test(cmd)) {
+    return sendSetupCode(env, line, replyToken);
+  }
+  if (COMMANDS.ownerReset.test(cmd)) {
+    return resetOwner(env, line, d, replyToken, userId);
   }
   if (COMMANDS.settings.test(cmd)) {
     return showSettings(env, line, d, replyToken);
@@ -1035,7 +1057,7 @@ async function startNoteConnect(
     return;
   }
 
-  const existing = await loadNoteSession(env.DB, DEFAULT_TENANT_ID, env.MASTER_KEY_V1);
+  const existing = await loadNoteSession(env.DB, DEFAULT_TENANT_ID, (await resolveMasterKey(env)).key);
   const { display } = await issuePairingCode(env.KV, DEFAULT_TENANT_ID, userId);
   await d.db.audit(DEFAULT_TENANT_ID, 'session.code_issued', `line:${userId}`, null, 'ok');
 
@@ -1044,7 +1066,7 @@ async function startNoteConnect(
 
 /** いまの連携状況を見せる。 */
 async function showConnectStatus(env: Env, line: LineClient, replyToken: string): Promise<void> {
-  const stored = await loadNoteSession(env.DB, DEFAULT_TENANT_ID, env.MASTER_KEY_V1);
+  const stored = await loadNoteSession(env.DB, DEFAULT_TENANT_ID, (await resolveMasterKey(env)).key);
   await line.reply(replyToken, [buildConnectStatus({
     connected: stored !== null,
     urlname: stored?.urlname ?? env.NOTE_URLNAME ?? '',
@@ -1115,4 +1137,48 @@ async function saveSetting(
   }
   await d.db.updateTenantSettings(DEFAULT_TENANT_ID, patch, `line:${userId}`);
   await line.reply(replyToken, [buildSettingsSaved(kind, await settingsView(env, d))]);
+}
+
+
+/**
+ * セットアップ画面用の使い捨てコードを出す。
+ * ★ここに来る時点で持ち主チェックは済んでいる（handleEvent の入口で弾いている）。
+ */
+async function sendSetupCode(env: Env, line: LineClient, replyToken: string): Promise<void> {
+  const { display, expiresAt } = await issueSetupCode(env.KV);
+  await line.reply(replyToken, [text(
+    'セットアップ画面で使うコードです。\n\n' +
+    `　${display}\n\n` +
+    '10分で使えなくなります。1回だけ使えます。\n' +
+    'システムのURLの末尾に /setup を付けて開き、この番号を貼ってください。'
+  )]);
+  log.info('セットアップ用コードを発行しました', { expiresAt });
+}
+
+
+/**
+ * 持ち主の登録をやめる。次に話しかけた人が新しい持ち主になる。
+ *
+ * ★ここに来る時点で「いまの持ち主」であることは確認済み（入口で弾いている）。
+ * ★環境変数で持ち主を固定している場合は効かない。黙って成功と言わない。
+ */
+async function resetOwner(
+  env: Env, line: LineClient, d: ServiceDeps, replyToken: string, userId: string,
+): Promise<void> {
+  if (env.LINE_OWNER_USER_ID) {
+    await line.reply(replyToken, [text(
+      '持ち主が固定されているため、ここからは変更できません。\n' +
+      'Cloudflare の画面 → お使いの Worker → 設定 → 変数とシークレット で\n' +
+      'LINE_OWNER_USER_ID を消してから、もう一度お試しください。'
+    )]);
+    return;
+  }
+
+  const cleared = await d.db.clearOwnerLineUserId(DEFAULT_TENANT_ID, `line:${userId}`);
+  await line.reply(replyToken, [text(cleared
+    ? '持ち主の登録をやめました。\n\n' +
+      '★次にこのトークへ話しかけた人が、新しい持ち主になります。\n' +
+      '引き継ぐ相手に、先に話しかけてもらってください。'
+    : '持ち主はもともと登録されていませんでした。')]);
+  log.info('持ち主の登録をやめました', { cleared });
 }

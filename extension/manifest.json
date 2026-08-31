@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "note連携ツール",
-  "version": "1.0.0",
-  "description": "LINE で作った記事を note へ投稿します。投稿はこのパソコンから行われます。",
+  "version": "1.1.0",
+  "description": "LINE で作った記事を note へ投稿します。接続先は設定画面で指定します。",
   "permissions": [
     "cookies",
     "storage",
@@ -10,8 +10,7 @@
   ],
   "host_permissions": [
     "https://note.com/*",
-    "https://*.note.com/*",
-    "https://example.workers.dev/*"
+    "https://*.note.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -25,5 +24,8 @@
   "background": {
     "service_worker": "background.js",
     "type": "module"
-  }
+  },
+  "optional_host_permissions": [
+    "https://*.workers.dev/*"
+  ]
 }

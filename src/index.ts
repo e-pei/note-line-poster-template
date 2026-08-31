@@ -13,6 +13,8 @@ import { retryBlocked } from './cron/retry-blocked';
 import { handleConnectNote, handleConnectPing, handleConnectPreflight } from './adapters/connect/router';
 import { handleAgentPoll, handleAgentResult, handleAgentAsset, handleAgentPreflight } from './adapters/agent/router';
 import { resolveNoteSession } from './core/session/resolve';
+import { resolveMasterKey } from './core/setup/masterkey';
+import { setupRouter } from './adapters/setup/router';
 import { hasDevice, isAgentOnline } from './core/agent/jobs';
 import { loadNoteSession } from './core/session/store';
 import { DEFAULT_TENANT_ID } from './ports/storage/db';
@@ -77,6 +79,12 @@ app.get('/health', async (c) => {
     const tenant = await db.getTenant(DEFAULT_TENANT_ID);
     checks.execution_mode = tenant.execution_mode;
 
+    // ★鍵の「置き場所」だけを出す。値は絶対に出さない。
+    //   none のままだと note 連携ができないので、気づけるようにしておく
+    const mk = await resolveMasterKey(c.env);
+    checks.master_key = mk.source;
+    if (mk.source === 'none') ok = false;
+
     if (tenant.execution_mode === 'agent') {
       // agent では Cookie を預からない。見るべきは「拡張が繋がっているか」
       const connected = await hasDevice(c.env.DB, DEFAULT_TENANT_ID);
@@ -86,7 +94,7 @@ app.get('/health', async (c) => {
     } else {
       const { origin } = await resolveNoteSession(c.env);
       const stored = origin === 'extension'
-        ? await loadNoteSession(c.env.DB, DEFAULT_TENANT_ID, c.env.MASTER_KEY_V1)
+        ? await loadNoteSession(c.env.DB, DEFAULT_TENANT_ID, (await resolveMasterKey(c.env)).key)
         : null;
       checks.note_session = `${origin}${stored ? `/${stored.status}` : ''}`;
       if (origin === 'none') ok = false;
@@ -100,6 +108,9 @@ app.get('/health', async (c) => {
 });
 
 /** LINE Webhook（署名検証は handleLineWebhook 内で行う）。 */
+// ★配備したあと、ブラウザだけで仕上げるための画面
+app.route('/', setupRouter);
+
 app.post('/line/webhook', (c) => handleLineWebhook(c.req.raw, c.env, c.executionCtx));
 
 /**

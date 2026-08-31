@@ -59,6 +59,21 @@ describe('ワークスペースIDの扱い', () => {
     expect(sent!.has('anthropic-workspace-id')).toBe(false);
   });
 
+  it('★IDを送っていないときの案内は、どこで登録するかまで書く', async () => {
+    // 配備画面に入力欄が無いので、「必要です」だけだと顧客が詰む
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      errResponse(400, '{"error":{"message":"workspace required"}}'));
+    try {
+      await new AnthropicLlm(KEY).structured({ tier: 'fast', system: 's', user: 'u', schema: Schema, maxTokens: 100, label: 'テスト' });
+      throw new Error('ここには来ないはず');
+    } catch (e) {
+      const msg = (e as LlmError).userMessage;
+      expect(msg).toContain('ANTHROPIC_WORKSPACE_ID');
+      expect(msg).toContain('変数とシークレット');
+      expect(msg).toContain('ターミナルは不要');
+    }
+  });
+
   it('★IDを送ったうえで断られたら、「未設定」ではなく「値が違う」と伝える', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       errResponse(400, '{"error":{"message":"anthropic-workspace-id header must be a valid workspace ID."}}'));

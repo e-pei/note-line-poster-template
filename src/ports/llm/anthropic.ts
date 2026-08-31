@@ -121,8 +121,12 @@ export class AnthropicLlm {
         throw new LlmError(body, this.workspaceId
           ? '登録されているワークスペースIDが正しくないようです。'
             + 'console.anthropic.com の Settings → Workspaces で、wrkspc_ から始まるIDをご確認ください。'
-          : 'Claude の API キーがワークスペースに紐づいているため、ワークスペースIDの設定が必要です。'
-            + 'console.anthropic.com の Settings → Workspaces でIDをご確認ください。',
+          // ★配備画面には入力欄が無い（必須項目を3つに絞ったため）。
+          //   ダッシュボードから足せることまで書かないと、顧客は詰む
+          : 'Claude の API キーがワークスペースに紐づいているため、ワークスペースIDの設定が必要です。\n'
+            + '① console.anthropic.com の Settings → Workspaces で wrkspc_ から始まるIDを確認\n'
+            + '② Cloudflare の画面 → お使いの Worker → 設定 → 変数とシークレット で\n'
+            + '　 ANTHROPIC_WORKSPACE_ID として登録（ターミナルは不要です）',
           false, res.status);
       }
       if (res.status >= 500) {

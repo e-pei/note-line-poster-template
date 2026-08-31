@@ -172,6 +172,26 @@ export class Db {
     return { ownerId: candidate, justRegistered: true };
   }
 
+  /**
+   * 持ち主の登録を消す。次に話しかけた人が新しい持ち主になる。
+   *
+   * ★誤って別の人が持ち主になったとき、これが無いと D1 を直接いじるしかなかった
+   *   （2026-08-31 源蔵レビューの指摘）。
+   * ★env に LINE_OWNER_USER_ID が入っている場合は、そちらが優先されるので効かない。
+   *   呼び出し側で先に確かめること。
+   */
+  async clearOwnerLineUserId(tenantId: string, actor: string): Promise<boolean> {
+    const res = await this.d1
+      .prepare(`UPDATE line_channels SET owner_line_user_id = NULL
+                 WHERE tenant_id = ? AND owner_line_user_id IS NOT NULL`)
+      .bind(tenantId)
+      .run();
+
+    const cleared = (res.meta?.changes ?? 0) > 0;
+    if (cleared) await this.audit(tenantId, 'owner.cleared', actor, null, 'ok');
+    return cleared;
+  }
+
   /** 登録済みのオーナーを読む（未登録なら null）。 */
   async getOwnerLineUserId(tenantId: string): Promise<string | null> {
     const row = await this.d1

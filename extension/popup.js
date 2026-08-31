@@ -7,7 +7,9 @@
  */
 
 /** 既定の接続先。提供元の指示があったときだけ画面から変更できる。 */
-const DEFAULT_ENDPOINT = 'https://example.workers.dev';
+// ★接続先は焼き込まない。全員に同じものを配り、設定画面で1回入れてもらう。
+//   焼き込む方式だと、例文のまま作っても成功してしまい気づけなかった（2026-08-30 実際に事故）。
+const DEFAULT_ENDPOINT = '';
 
 /** note のログインを保持している Cookie。これが無ければ連携は成立しない。 */
 const SESSION_COOKIE = '_note_session_v5';
@@ -154,6 +156,30 @@ el.saveEndpoint.addEventListener('click', async () => {
     showResult('ng', 'https:// から始まるURLを入力してください。');
     return;
   }
+
+  // ★接続先を焼き込むのをやめたので、ここで「この1つだけ」の許可をもらう。
+  //   広い許可（すべてのサイト）を最初から取らないための形。
+  //   ボタンを押したときにしか許可は求められないので、この場所である必要がある。
+  let origin;
+  try {
+    origin = `${new URL(value).origin}/*`;
+  } catch {
+    showResult('ng', 'URL の形が正しくありません。');
+    return;
+  }
+
+  try {
+    const granted = await chrome.permissions.request({ origins: [origin] });
+    if (!granted) {
+      showResult('ng', 'この接続先へのアクセスが許可されませんでした。もう一度お試しください。');
+      return;
+    }
+  } catch (e) {
+    // workers.dev 以外は要求できない（manifest の optional_host_permissions の範囲外）
+    showResult('ng', 'この接続先には対応していません。〇〇.workers.dev のURLをご確認ください。');
+    return;
+  }
+
   await chrome.storage.local.set({ endpoint: value });
   showResult('ok', '接続先を保存しました。');
 });

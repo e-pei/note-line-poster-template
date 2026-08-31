@@ -21,6 +21,7 @@ import { NoteClient } from '../../ports/publisher/note/client';
 import { Db, DEFAULT_TENANT_ID } from '../../ports/storage/db';
 import { LineClient, text } from '../line/client';
 import { log } from '../../lib/mask';
+import { resolveMasterKey } from '../../core/setup/masterkey';
 
 const ConnectBody = z.object({
   code: z.string().min(4).max(32),
@@ -129,7 +130,7 @@ export async function handleConnectNote(req: Request, env: Env): Promise<Respons
         cookieHeader: probe.latestCookieHeader || cookieHeader,
         userAgent: parsed.userAgent,
         urlname: me.urlname,
-      }, env.MASTER_KEY_V1);
+      }, (await resolveMasterKey(env)).key);
     } catch (e) {
       if (e instanceof CryptoConfigError) {
         log.error('暗号化鍵が未設定のため連携を拒否しました');

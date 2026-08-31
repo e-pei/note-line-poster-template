@@ -21,7 +21,7 @@ export const PAIRING_TTL_SEC = 900;
  * LINE から手で打ち写す人がいる前提で選ぶ。
  */
 const ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-const CODE_LENGTH = 8;
+export const CODE_LENGTH = 8;
 
 export interface PairingRecord {
   tenantId: string;

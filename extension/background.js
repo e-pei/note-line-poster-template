@@ -9,7 +9,9 @@
  */
 import { runPlan, PlanError } from './plan-runner.js';
 
-const DEFAULT_ENDPOINT = 'https://example.workers.dev';
+// ★接続先は焼き込まない。全員に同じものを配り、設定画面で1回入れてもらう。
+//   焼き込む方式だと、例文のまま作っても成功してしまい気づけなかった（2026-08-30 実際に事故）。
+const DEFAULT_ENDPOINT = '';
 const ALARM = 'poll-jobs';
 /** 何分ごとに聞きに行くか（Chrome の最小値は1分）。 */
 const PERIOD_MINUTES = 1;

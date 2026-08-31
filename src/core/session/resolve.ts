@@ -14,6 +14,7 @@ import { loadNoteSession, refreshCookieHeader } from './store';
 import { filterCookieHeader, hasSessionCookie, parseCookieHeader } from './cookies';
 import { DEFAULT_TENANT_ID } from '../../ports/storage/db';
 import { log } from '../../lib/mask';
+import { resolveMasterKey } from '../setup/masterkey';
 
 export type SessionOrigin = 'extension' | 'env' | 'none';
 
@@ -37,7 +38,7 @@ export async function resolveNoteSession(
   env: Env, tenantId = DEFAULT_TENANT_ID,
 ): Promise<ResolvedSession> {
   try {
-    const stored = await loadNoteSession(env.DB, tenantId, env.MASTER_KEY_V1);
+    const stored = await loadNoteSession(env.DB, tenantId, (await resolveMasterKey(env)).key);
     if (stored?.cookieHeader) {
       return {
         session: {
@@ -96,7 +97,7 @@ export async function persistRefreshedCookie(
     return;
   }
   try {
-    await refreshCookieHeader(env.DB, tenantId, filtered, env.MASTER_KEY_V1);
+    await refreshCookieHeader(env.DB, tenantId, filtered, (await resolveMasterKey(env)).key);
   } catch (e) {
     log.warn('note セッションの更新保存に失敗', String(e));
   }
