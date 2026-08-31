@@ -54,7 +54,10 @@ const VARS = [
     where: 'LINE Developers → Messaging API設定 → チャネルアクセストークン（長期）' },
   { key: 'ANTHROPIC_API_KEY', required: true, secret: true,
     where: 'console.anthropic.com（★Pro/Max の個人プランは規約上使えません）' },
+  // ★形の検査を付ける。付け忘れると「設定したのに動かない」になる（2026-08-30 実地）
   { key: 'ANTHROPIC_WORKSPACE_ID', required: false, secret: true,
+    validate: (v) => (!v || v.startsWith('wrkspc_')) ? null
+      : 'wrkspc_ から始まる値である必要があります（Console の Settings → Workspaces）。空欄でも動きます',
     where: 'Anthropic Console → Settings → Workspaces（wrkspc_ で始まるID。使っていなければ空でOK）' },
   { key: 'MASTER_KEY_V1', required: true, secret: true, generate: true,
     where: '自動生成します（note のログイン情報を暗号化する鍵）' },
@@ -112,8 +115,15 @@ function main() {
   let vars = readDevVars();
   const missing = [];
 
+  const badFormat = [];
   for (const v of VARS) {
-    if (vars[v.key]) { ok(`${v.key}`); continue; }
+    if (vars[v.key]) {
+      // ★値が入っていても、形が違えば意味がない。ここで気づかせる
+      const problem = v.validate?.(vars[v.key]);
+      if (problem) { fail(`${v.key} の値の形が違います`); badFormat.push([v.key, problem]); }
+      else ok(`${v.key}`);
+      continue;
+    }
     if (v.generate) {
       const value = randomBytes(32).toString('base64');
       if (!DRY) { setDevVar(v.key, value); vars[v.key] = value; }
@@ -122,6 +132,12 @@ function main() {
     }
     if (v.required) { fail(`${v.key} が未設定`); missing.push(v); }
     else skip(`${v.key}（任意・未設定）`);
+  }
+
+  if (badFormat.length > 0) {
+    console.log('\n次の値の形を直してから、もう一度実行してください:\n');
+    for (const [key, problem] of badFormat) console.log(`  ${key}\n    → ${problem}\n`);
+    process.exit(1);
   }
 
   if (missing.length > 0) {

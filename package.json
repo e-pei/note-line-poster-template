@@ -24,7 +24,8 @@
     "setup:line": "node scripts/setup-line.mjs",
     "setup:line:dry": "node scripts/setup-line.mjs --dry-run",
     "setup": "node scripts/setup.mjs",
-    "setup:dry": "node scripts/setup.mjs --dry-run"
+    "setup:dry": "node scripts/setup.mjs --dry-run",
+    "template": "node scripts/build-template.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",

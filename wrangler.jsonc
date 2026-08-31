@@ -7,10 +7,10 @@
   "observability": { "enabled": true },
 
   "d1_databases": [
-    { "binding": "DB", "database_name": "note-line-poster", "database_id": "YOUR_D1_DATABASE_ID", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "note-line-poster", "migrations_dir": "migrations" }
   ],
   "kv_namespaces": [
-    { "binding": "KV", "id": "YOUR_KV_NAMESPACE_ID" }
+    { "binding": "KV" }
   ],
   // 公開処理は数秒で終わるため Webhook の waitUntil 内で同期実行する。
   // 生成だけは画像待ちの sleep が要るので Workflow にする。

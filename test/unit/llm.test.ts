@@ -19,6 +19,61 @@ function errResponse(status: number, body = '{"error":{"type":"x","message":"y"}
 
 afterEach(() => vi.restoreAllMocks());
 
+describe('ワークスペースIDの扱い', () => {
+  // 2026-08-30 実地で発生:
+  //   .dev.vars に「wrkspc_」を付け忘れた値を入れていたため、Claude が
+  //   400「anthropic-workspace-id header must be a valid workspace ID」を返し、
+  //   アプリは「ワークスペースIDの設定が必要です」と案内した。
+  //   ★設定はされていた。値の形が違っただけ。案内が原因を隠していた。
+
+  it('正しい形なら、そのままヘッダに載せる', async () => {
+    let sent: Headers | undefined;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_u, init) => {
+      sent = new Headers((init as RequestInit).headers);
+      return okResponse({ ok: true });
+    });
+
+    await new AnthropicLlm(KEY, 'wrkspc_01ABC').structured({ tier: 'fast', system: 's', user: 'u', schema: Schema, maxTokens: 100, label: 'テスト' });
+    expect(sent!.get('anthropic-workspace-id')).toBe('wrkspc_01ABC');
+  });
+
+  it('★形が違うIDは送らない（送ると必ず失敗するため）', async () => {
+    let sent: Headers | undefined;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_u, init) => {
+      sent = new Headers((init as RequestInit).headers);
+      return okResponse({ ok: true });
+    });
+
+    // wrkspc_ が抜けている＝実地で起きた形
+    await new AnthropicLlm(KEY, '01NkFodsrFE3').structured({ tier: 'fast', system: 's', user: 'u', schema: Schema, maxTokens: 100, label: 'テスト' });
+    expect(sent!.has('anthropic-workspace-id')).toBe(false);
+  });
+
+  it('空欄や空白だけなら送らない', async () => {
+    let sent: Headers | undefined;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_u, init) => {
+      sent = new Headers((init as RequestInit).headers);
+      return okResponse({ ok: true });
+    });
+    await new AnthropicLlm(KEY, '   ').structured({ tier: 'fast', system: 's', user: 'u', schema: Schema, maxTokens: 100, label: 'テスト' });
+    expect(sent!.has('anthropic-workspace-id')).toBe(false);
+  });
+
+  it('★IDを送ったうえで断られたら、「未設定」ではなく「値が違う」と伝える', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      errResponse(400, '{"error":{"message":"anthropic-workspace-id header must be a valid workspace ID."}}'));
+
+    try {
+      await new AnthropicLlm(KEY, 'wrkspc_01ABC').structured({ tier: 'fast', system: 's', user: 'u', schema: Schema, maxTokens: 100, label: 'テスト' });
+      throw new Error('ここには来ないはず');
+    } catch (e) {
+      const msg = (e as LlmError).userMessage;
+      expect(msg).toContain('登録されているワークスペースID');
+      expect(msg).not.toContain('設定が必要です');
+    }
+  });
+});
+
 describe('AnthropicLlm — キーの検証', () => {
   it('sk-ant- で始まらないキーは即座に拒否する', () => {
     expect(() => new AnthropicLlm('wrong-key')).toThrow(LlmError);

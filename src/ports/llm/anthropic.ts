@@ -59,10 +59,24 @@ export class AnthropicLlm {
    *   Console の Settings → Workspaces で確認できる `wrkspc_` で始まるID。
    *   通常のキーなら不要。
    */
-  constructor(private readonly apiKey: string, private readonly workspaceId?: string | null) {
+  /** 実際にヘッダへ載せるワークスペースID。形が違うものは載せない */
+  private readonly workspaceId: string | null;
+
+  constructor(private readonly apiKey: string, workspaceId?: string | null) {
     if (!apiKey?.startsWith('sk-ant-')) {
       throw new LlmError('APIキーの形式が不正',
         'Claude の API キーが正しく登録されていません。console.anthropic.com で発行したキー（sk-ant- で始まるもの）をご登録ください。', false);
+    }
+
+    // ★形の違うIDを送ると、Claude は 400 で全部断る。
+    //   多くのキーはこのヘッダ無しでも通るので、**送らないほうが動く**。
+    //   （2026-08-30 実地: 「wrkspc_」を付け忘れた値が入っていて、記事生成が全部失敗した）
+    const trimmed = workspaceId?.trim() ?? '';
+    if (trimmed && !trimmed.startsWith('wrkspc_')) {
+      log.warn('ワークスペースIDの形が違うため、送らずに続行します（wrkspc_ で始まる必要があります）');
+      this.workspaceId = null;
+    } else {
+      this.workspaceId = trimmed || null;
     }
   }
 
@@ -101,10 +115,15 @@ export class AnthropicLlm {
         throw new LlmError(body, 'Claude の API 残高が不足しています。console.anthropic.com でご確認ください。', false, res.status);
       }
       // BYOK で最も多い躓き。原因が分かる文言にしておく（サポート問い合わせを減らすため）
+      // ★「送ったのに断られた」と「そもそも送っていない」を区別する。
+      //   区別しないと、設定済みの人が設定画面を探し回ることになる（2026-08-30 実地）
       if (res.status === 400 && /workspace/i.test(body)) {
-        throw new LlmError(body,
-          'Claude の API キーがワークスペースに紐づいているため、ワークスペースIDの設定が必要です。' +
-          'console.anthropic.com の Settings → Workspaces でIDをご確認ください。', false, res.status);
+        throw new LlmError(body, this.workspaceId
+          ? '登録されているワークスペースIDが正しくないようです。'
+            + 'console.anthropic.com の Settings → Workspaces で、wrkspc_ から始まるIDをご確認ください。'
+          : 'Claude の API キーがワークスペースに紐づいているため、ワークスペースIDの設定が必要です。'
+            + 'console.anthropic.com の Settings → Workspaces でIDをご確認ください。',
+          false, res.status);
       }
       if (res.status >= 500) {
         throw new LlmError(body, 'Claude 側で一時的な障害が起きています。自動で再試行します。', true, res.status);
