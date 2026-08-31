@@ -477,6 +477,21 @@
     cursor: pointer;
   }
   .cmd__copy:hover { border-color: var(--auto); color: var(--auto); }
+
+  /* ── 押して開くリンク ─────────────────────────────── */
+  .linkbtn {
+    display: inline-block;
+    background: var(--auto);
+    color: var(--ground);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14.5px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    margin: 10px 0 4px;
+  }
+  .linkbtn:hover { opacity: .88; }
+  .linkbtn::after { content: " ↗"; font-weight: 400; }
   .cmd__copy[data-copied="1"] { border-color: var(--auto); color: var(--auto); }
 
   /* ── 注意書き ─────────────────────────────────────── */
@@ -646,7 +661,7 @@
     <div class="facts">
       <div class="fact">
         <span class="fact__k">所要</span>
-        <span class="fact__v">約 69 分</span>
+        <span class="fact__v">約 74 分</span>
       </div>
       <div class="fact">
         <span class="fact__k">費用</span>
@@ -738,7 +753,7 @@
       </div>
       <div class="vault__row">
         <span class="vault__key">ANTHROPIC_API_KEY</span>
-        <span class="vault__from">Anthropic Console（sk-ant- で始まる）</span>
+        <span class="vault__from">Claude の開発者向け画面（sk-ant- で始まる）</span>
       </div>
 
     </div>
@@ -875,7 +890,6 @@
         <ol>
           <li>右上の <strong>「設定」</strong> → 左メニューの <strong>「応答設定」</strong></li>
           <li><strong>応答メッセージ</strong> を <strong>オフ</strong></li>
-          <li><strong>Webhook</strong> を <strong>オン</strong></li>
           <li>あいさつメッセージはどちらでも構いません</li>
         </ol>
         <div class="note note--alarm">
@@ -883,6 +897,12 @@
           <p><strong>応答メッセージがオンのままだと、LINE の定型文と AI の返信が二重に届きます。</strong>
           「なぜか変な返事が来る」の原因はほぼこれです。
           この設定を変える API が存在しないので自動化できません。<strong>ここだけは必ず手で切ってください。</strong></p>
+        </div>
+        <div class="note">
+          <span class="note__label">Webhook はここでは触りません</span>
+          <p>同じ画面に <strong>Webhook</strong> のスイッチもありますが、<strong>いまはオフのままで構いません</strong>。
+          <strong>送り先のアドレスが決まっていないと、オンにできない</strong>ためです。
+          アドレスができたあと、<a href="#p7">07</a> でオンにします。</p>
         </div>
         <div class="note">
           <span class="note__label">「応答モード」を聞かれたら</span>
@@ -1034,37 +1054,103 @@
     <div class="phase__head">
       <span class="phase__num">03</span>
       <h2 class="phase__title">Claude の API キーを発行する</h2>
-      <span class="phase__time">5分</span>
+      <span class="phase__time">10分</span>
     </div>
     <p class="phase__intro">
-      記事を書くのは Claude です。料金は使った分だけかかります。
+      記事を書くのは Claude です。<strong>ここだけはお金がかかります。</strong>
+      先にお金を入れておいて、使った分だけ減っていく仕組みです（携帯のプリペイドと同じ考え方）。
     </p>
+
+    <div class="note note--alarm">
+      <span class="note__label">★普段使っている Claude（Pro / Max）とは別物です</span>
+      <p>月額で使っている Claude Pro / Max を、こうした仕組みの裏側で使うことは
+      <strong>Anthropic の規約で禁止されています</strong>。
+      同じログインで入れますが、<strong>「API」用の支払いを別に登録する必要があります。</strong></p>
+    </div>
 
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s3-1">
       <div class="step__body">
-        <h3 class="step__title">Anthropic Console に登録してキーを発行する <span class="tag tag--manual">手でやる</span></h3>
-        <p>
-          <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>
-          で登録し、クレジットを購入してから API キーを発行します。<code>sk-ant-</code> で始まる文字列です。
-        </p>
-        <div class="note note--alarm">
-          <span class="note__label">Pro / Max のプランは使えません</span>
-          <p>個人向けの Claude Pro / Max を、こうした仕組みの裏側で使うことは Anthropic の規約で禁止されています。
-          <strong>Console で発行する従量課金のキー</strong>を使ってください。</p>
+        <h3 class="step__title">開発者向けの画面にログインする <span class="tag tag--manual">手でやる</span></h3>
+        <p><a class="linkbtn" href="https://platform.claude.com/" target="_blank" rel="noopener">Claude の開発者向け画面を開く</a></p>
+        <ul>
+          <li>すでに Claude を使っている方は、<strong>同じアカウントでログイン</strong>できます</li>
+          <li>初めての方は、00 で用意したメールアドレスで登録してください</li>
+          <li>組織名を聞かれたら、屋号や個人名で構いません</li>
+        </ul>
+        <div class="note">
+          <span class="note__label">昔の住所でも開けます</span>
+          <p><code>console.anthropic.com</code> を開くと、この画面に自動で移ります。
+          どちらを開いても同じです。</p>
         </div>
-        <p>目安の費用は、記事1本あたり <strong>Sonnet 5 で約34円</strong>、<strong>Haiku 4.5 で約4円</strong>です。</p>
       </div>
     </label>
 
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s3-2">
       <div class="step__body">
-        <h3 class="step__title">ワークスペースIDを確認する（該当する場合のみ） <span class="tag tag--manual">手でやる</span></h3>
-        <p>
-          キーを特定のワークスペースに紐づけた場合は、Settings → Workspaces にある
-          <code>wrkspc_</code> で始まる ID も控えてください。紐づけていなければ不要です。
-        </p>
+        <h3 class="step__title">支払い方法（クレジットカード）を登録する <span class="tag tag--manual">手でやる</span></h3>
+        <p><a class="linkbtn" href="https://platform.claude.com/settings/billing" target="_blank" rel="noopener">お支払いの画面を開く</a></p>
+        <ol>
+          <li>左メニューの <strong>Settings</strong>（設定）→ <strong>Billing</strong>（お支払い）</li>
+          <li><strong>「Add payment method」</strong>（支払い方法を追加）を押す</li>
+          <li>クレジットカードの番号・有効期限・セキュリティコードを入れる</li>
+          <li>請求先の住所を入れる（日本の住所でそのまま入れて大丈夫です）</li>
+        </ol>
+        <div class="note">
+          <span class="note__label">入力欄が英語で戸惑ったら</span>
+          <p><code>Card number</code>＝カード番号／<code>Expiration</code>＝有効期限／
+          <code>CVC</code>＝裏面の3桁／<code>Country</code>＝Japan／
+          <code>Address</code>＝住所（英語表記でなくても通ります）</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s3-3">
+      <div class="step__body">
+        <h3 class="step__title">クレジット（前払いの残高）を買う <span class="tag tag--manual">手でやる</span></h3>
+        <p>同じお支払いの画面で <strong>「Buy credits」</strong>（クレジットを購入）を押し、
+        金額を選んで購入します。</p>
+        <div class="note">
+          <span class="note__label">いくら買えばいい？</span>
+          <p><strong>まずは最小の金額で十分です。</strong>画面に出ている一番小さい額を選んでください。
+          記事1本あたりの目安は <strong>約34円</strong>（本文を書く AI）＋<strong>約4円</strong>（下ごしらえの AI）です。
+          <strong>数百本ぶんは持ちます。</strong></p>
+          <p>残高が減ってきたら、同じ画面で買い足せます。
+          <strong>自動で引き落とされる設定（Auto reload）はオフのままで構いません。</strong></p>
+        </div>
+        <div class="note note--alarm">
+          <span class="note__label">買わないと動きません</span>
+          <p>キーを発行しても、残高が 0 のままだと記事が作れません
+          （LINE に「残高が不足しています」と返ってきます）。</p>
+        </div>
+      </div>
+    </label>
+
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s3-4">
+      <div class="step__body">
+        <h3 class="step__title">API キーを発行して控える <span class="tag tag--manual">手でやる</span></h3>
+        <p><a class="linkbtn" href="https://platform.claude.com/settings/keys" target="_blank" rel="noopener">API キーの画面を開く</a></p>
+        <ol>
+          <li>左メニューの <strong>API keys</strong> を開く</li>
+          <li><strong>「Create Key」</strong>（キーを作成）を押す</li>
+          <li>名前を聞かれるので、分かるもので構いません（例：<code>note-line-poster</code>）</li>
+          <li><code>sk-ant-</code> で始まる長い文字列が出るので、<strong>コピーして控える</strong></li>
+        </ol>
+        <div class="note note--alarm">
+          <span class="note__label">★この画面を閉じると二度と見られません</span>
+          <p>その場でコピーして、メモ帳などに控えてください。
+          控え損ねたら、<strong>新しいキーを作り直せば大丈夫</strong>です（古いほうは消してください）。</p>
+        </div>
+        <div class="note">
+          <span class="note__label">ワークスペースを聞かれたら</span>
+          <p><strong>Default のままで構いません。</strong>
+          もし特定のワークスペースを選んだ場合は、
+          <strong>Settings → Workspaces</strong> にある <code>wrkspc_</code> で始まる ID も控えてください
+          （通常は使いません）。</p>
+        </div>
       </div>
     </label>
   </section>
@@ -1142,10 +1228,7 @@
       <div class="step__body">
         <h3 class="step__title">配備のボタンを押す <span class="tag tag--manual">手でやる</span></h3>
         <p>次のページを開き、<strong>「Deploy to Cloudflare」</strong>のボタンを押します。</p>
-        <div class="cmd">
-          <button class="cmd__copy" type="button">コピー</button>
-          <div class="cmd__scroll"><code>https://github.com/e-pei/note-line-poster-template</code></div>
-        </div>
+        <p><a class="linkbtn" href="https://github.com/e-pei/note-line-poster-template" target="_blank" rel="noopener">配備のページを開く</a></p>
         <div class="note note--alarm">
           <span class="note__label">Cloudflare にログインしているアカウントを確認</span>
           <p>画面の左上に、いまログインしているアカウントが出ています。
@@ -1268,13 +1351,30 @@
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s7-3">
       <div class="step__body">
-        <h3 class="step__title">LINE の応答メッセージをオフにする <span class="tag tag--manual">手でやる</span></h3>
-        <p><span class="oshint">LINE Official Account Manager</span></p>
-        <p>右上の <strong>「設定」→「応答設定」</strong> → <strong>応答メッセージ</strong> を <strong>オフ</strong>。</p>
+        <h3 class="step__title">★Webhook を2か所オンにする <span class="tag tag--manual">手でやる</span></h3>
+        <p>アドレスが入ったので、<strong>ここで初めてオンにできます</strong>。
+        <strong>2か所とも</strong>オンにしないと、LINE で何を送っても反応しません。</p>
+
+        <p><span class="oshint">① LINE Developers Console</span></p>
+        <ol>
+          <li><a href="https://developers.line.biz/console/" target="_blank" rel="noopener">developers.line.biz/console</a>
+          → プロバイダー → チャネル → <strong>「Messaging API設定」タブ</strong></li>
+          <li><strong>Webhook URL</strong> に <code>https://（あなたのURL）/line/webhook</code> が入っていることを確認</li>
+          <li>すぐ下の <strong>「Webhookの利用」</strong> を <strong>オン</strong></li>
+        </ol>
+
+        <p><span class="oshint">② LINE Official Account Manager</span></p>
+        <ol>
+          <li><a href="https://manager.line.biz/" target="_blank" rel="noopener">manager.line.biz</a>
+          → 右上の <strong>「設定」</strong> → 左メニューの <strong>「応答設定」</strong></li>
+          <li><strong>Webhook</strong> を <strong>オン</strong></li>
+        </ol>
+
         <div class="note note--alarm">
-          <span class="note__label">ここだけは自動化できません</span>
-          <p>この設定を変える方法が LINE 側に用意されていないためです。
-          <strong>オンのままだと、LINE の定型文と AI の返信が二重に届きます。</strong></p>
+          <span class="note__label">ここを飛ばすと、何を送っても無反応になります</span>
+          <p>「セットアップ」も「note連携」も返事が来ません。
+          <strong>反応しないときは、まずこの2つを確認してください。</strong></p>
+          <p>この2つのスイッチを変える窓口が LINE 側に用意されていないため、自動化できません。</p>
         </div>
       </div>
     </label>
@@ -1312,10 +1412,7 @@
         <h3 class="step__title">拡張機能をダウンロードして展開する <span class="tag tag--manual">手でやる</span></h3>
         <p>次のリンクを開くと <strong>note-connect.zip</strong> がダウンロードされます。
         <strong>全員同じもの</strong>です（あなた専用に作る作業はありません）。</p>
-        <div class="cmd">
-          <button class="cmd__copy" type="button">コピー</button>
-          <div class="cmd__scroll"><code>https://github.com/e-pei/note-line-poster-template/raw/main/extension-package/note-connect.zip</code></div>
-        </div>
+        <p><a class="linkbtn" href="https://github.com/e-pei/note-line-poster-template/raw/main/extension-package/note-connect.zip" target="_blank" rel="noopener">note-connect.zip をダウンロード</a></p>
         <ul>
           <li data-os="mac">ダウンロードした zip をダブルクリックして展開する</li>
           <li data-os="win">ダウンロードした zip を右クリック →「すべて展開」で展開する</li>
