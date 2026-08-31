@@ -149,7 +149,7 @@ export async function handleConnectNote(req: Request, env: Env): Promise<Respons
 
   // ── 5. LINE に結果を返す（拡張の画面を閉じても分かるように）──
   const waiting = await countAwaitingSession(env, pairing.tenantId);
-  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN);
+  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN, env.KV);
   await line.push(pairing.lineUserId, [text(
     `note と連携しました。\n投稿先: ${me.nickname}（@${me.urlname}）\n\n` +
     (agentMode

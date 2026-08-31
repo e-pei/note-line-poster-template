@@ -112,7 +112,14 @@ export class AnthropicLlm {
         throw new LlmError(body, 'Claude 側が混み合っています。しばらくしてから自動で再試行します。', true, res.status);
       }
       if (res.status === 400 && /credit|billing/i.test(body)) {
-        throw new LlmError(body, 'Claude の API 残高が不足しています。console.anthropic.com でご確認ください。', false, res.status);
+        // ★どこで何をすれば復旧するかまで書く。「不足しています」だけだと顧客が動けない
+        throw new LlmError(body,
+          'Claude の残高が足りません。記事を作るには、先にクレジットを買い足す必要があります。\n\n'
+          + '▼ チャージはこちら\n'
+          + 'https://platform.claude.com/settings/billing\n\n'
+          + '「Buy credits」から購入できます（最低5ドルから）。\n'
+          + '購入後、もう一度お試しください。書きかけの内容は残っています。',
+          false, res.status);
       }
       // BYOK で最も多い躓き。原因が分かる文言にしておく（サポート問い合わせを減らすため）
       // ★「送ったのに断られた」と「そもそも送っていない」を区別する。

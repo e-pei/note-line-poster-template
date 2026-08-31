@@ -35,7 +35,7 @@ export async function retryBlocked(env: Env): Promise<void> {
     .bind(DEFAULT_TENANT_ID)
     .all<{ id: string }>();
 
-  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN);
+  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN, env.KV);
 
   for (const row of waiting.results ?? []) {
     const decision = await checkPolicy(deps, row.id);

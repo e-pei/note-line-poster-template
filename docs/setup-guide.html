@@ -1269,16 +1269,22 @@
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s6-4">
       <div class="step__body">
-        <h3 class="step__title">★Cloudflare Access をオンにする <span class="tag tag--manual">手でやる</span></h3>
-        <p>同じ画面の下のほうに <strong>「Protect with Cloudflare Access」</strong> というスイッチがあります。
-        <strong>これをオンにしてください。</strong></p>
+        <h3 class="step__title">Access のスイッチは、そのまま（オフ）で進む <span class="tag tag--manual">手でやる</span></h3>
+        <p>画面の下のほうに <strong>「Protect with Cloudflare Access」</strong> というスイッチがあります。
+        <strong>ここでは触らずに進んでください。</strong></p>
         <div class="note note--alarm">
-          <span class="note__label">なぜオンにするのか</span>
-          <p>設定画面（次の手順で使います）に、<strong>あなた以外が入れないようにする</strong>ためです。
-          スイッチ1つで済みます。</p>
-          <p><strong>オフのまま進めた場合：</strong>設定画面のURLを知った人が、
-          設定を入れ直せてしまいます（鍵や記事は見られませんが、余計な操作をされる可能性があります）。
-          あとからでも、Cloudflare の画面 → お使いの Worker → <b>Access</b> から有効にできます。</p>
+          <span class="note__label">★本番のアドレスに Access を掛けてはいけません</span>
+          <p>掛けると <strong>LINE からの通知にもログインが求められ、システムが完全に止まります。</strong>
+          何を送っても反応しなくなります。</p>
+          <p>配備が終わったあと、Cloudflare の画面に
+          <code>「この URL を知っている人は誰でもアクセスできます。Access を有効化 →」</code>
+          という案内が出ますが、<strong>プロダクションと書かれている側は押さないでください。</strong></p>
+        </div>
+        <div class="note">
+          <span class="note__label">では設定画面は誰が守っているのか</span>
+          <p>設定画面（<code>/setup</code>）は、<strong>使い捨てのコード</strong>で守られています。
+          一度セットアップが終わると、<strong>LINE で受け取ったコードが無いと実行できません。</strong>
+          URL を知られても、押せる操作がありません。</p>
         </div>
       </div>
     </label>
@@ -1295,6 +1301,17 @@
         </ul>
         <p>最後に <strong>あなたのURL</strong> が表示されます（例：<code>https://note-line-poster.〇〇.workers.dev</code>）。
         <strong>次の手順で使うので、この画面を開いたままにしてください。</strong></p>
+        <div class="note">
+          <span class="note__label">URL が分からなくなったら</span>
+          <p>どれで調べても同じ答えが出ます。</p>
+          <ul>
+            <li><strong>Cloudflare</strong>：コンピュート → Workers &amp; Pages → 名前をクリック →
+            「概要」タブの上のほうに出ています</li>
+            <li><strong>LINE Developers</strong>：「Messaging API設定」タブ → <strong>Webhook URL</strong> の
+            <code>/line/webhook</code> より<strong>前の部分</strong></li>
+            <li><strong>Chrome 拡張</strong>：「▼ 接続先の設定」の欄に入っている値</li>
+          </ul>
+        </div>
         <div class="note">
           <span class="note__label">失敗したとき</span>
           <p>赤い文字でエラーが出たら、その内容を控えて「つまずいたら」を確認してください。
@@ -1389,6 +1406,31 @@
           <p>記事を公開できるのは、この人だけです。<strong>必ず、あなたが最初に送ってください。</strong></p>
           <p>間違えて別の人が持ち主になった場合は、設定画面の
           <strong>「持ち主の登録をやめる」</strong>で戻せます。</p>
+        </div>
+      </div>
+    </label>
+    <label class="step">
+      <input type="checkbox" class="step__check" data-step="s7-5">
+      <div class="step__body">
+        <h3 class="step__title">プレビュー用のアドレスを塞ぐ（推奨） <span class="tag tag--manual">手でやる</span></h3>
+        <p>配備のたびに、<strong>一時的なアドレス</strong>が増えていきます。
+        中身は本番と同じものが動いていて、<strong>知っている人は誰でも開けます</strong>。
+        使う予定が無いので、塞いでおきます。</p>
+        <ol>
+          <li>Cloudflare の画面 → <strong>Workers &amp; Pages</strong> → お使いの Worker</li>
+          <li><strong>「ドメイン」タブ</strong>を開く</li>
+          <li><strong>プレビュー</strong>と書かれている行（<code>*-</code> で始まるアドレス）の
+          <strong>「Access を有効化」</strong>を押す</li>
+        </ol>
+        <div class="note note--alarm">
+          <span class="note__label">★押すのは「プレビュー」の側だけです</span>
+          <p><strong>プロダクション</strong>と書かれている側を押すと、
+          <strong>LINE が完全に止まります。</strong>行を間違えないでください。</p>
+        </div>
+        <div class="note">
+          <span class="note__label">飛ばしても動きます</span>
+          <p>これは「余計な入口を減らす」ための作業です。
+          設定画面そのものは、使い捨てコードで守られています。</p>
         </div>
       </div>
     </label>

@@ -51,7 +51,7 @@ export async function sessionHealth(env: Env): Promise<void> {
   await stampNotified(env);
 
   const waiting = await countAwaitingSession(env);
-  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN);
+  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN, env.KV);
   await line.push(ownerId, [buildSessionExpired(waiting)]);
 }
 

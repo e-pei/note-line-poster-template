@@ -106,7 +106,7 @@ export async function handleAgentResult(req: Request, env: Env): Promise<Respons
     images: new KvImageStore(env.KV),
   } satisfies ServiceDeps;
 
-  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN);
+  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN, env.KV);
   const owner = deps.ownerLineUserId;
 
   try {

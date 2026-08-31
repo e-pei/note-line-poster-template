@@ -59,6 +59,21 @@ describe('ワークスペースIDの扱い', () => {
     expect(sent!.has('anthropic-workspace-id')).toBe(false);
   });
 
+  it('★残高不足のときは、チャージ先まで案内する', async () => {
+    // 「不足しています」だけだと、顧客はどこで何をすればいいか分からない
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      errResponse(400, '{"error":{"message":"credit balance is too low"}}'));
+    try {
+      await new AnthropicLlm(KEY).structured({ tier: 'fast', system: 's', user: 'u', schema: Schema, maxTokens: 100, label: 'テスト' });
+      throw new Error('ここには来ないはず');
+    } catch (e) {
+      const msg = (e as LlmError).userMessage;
+      expect(msg).toContain('platform.claude.com/settings/billing');
+      expect(msg).toContain('5ドル');
+      expect(msg).toContain('書きかけの内容は残っています');
+    }
+  });
+
   it('★IDを送っていないときの案内は、どこで登録するかまで書く', async () => {
     // 配備画面に入力欄が無いので、「必要です」だけだと顧客が詰む
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>

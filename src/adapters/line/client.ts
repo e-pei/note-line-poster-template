@@ -7,6 +7,7 @@
  *   1記事あたり Push 1〜2通に抑えれば、無料プラン（月200通）で月100本前後まで回る。
  */
 import { log } from '../../lib/mask';
+import { recordPush, buildQuotaWarning } from '../../core/line/quota';
 
 const API = 'https://api.line.me/v2/bot';
 const CONTENT_API = 'https://api-data.line.me/v2/bot';
@@ -17,7 +18,15 @@ export interface LineMessage {
 }
 
 export class LineClient {
-  constructor(private readonly accessToken: string) {}
+  /**
+   * @param kv 渡すと、送った通数を数えて上限が近いことを知らせる。
+   *   ★数えるのはプッシュだけ（返信は無料で通数に含まれない）。
+   *   渡さなくても送信は普通にできる（数えないだけ）。
+   */
+  constructor(
+    private readonly accessToken: string,
+    private readonly kv?: KVNamespace,
+  ) {}
 
   private headers(): Record<string, string> {
     return {
@@ -47,6 +56,26 @@ export class LineClient {
   /** プッシュメッセージ。課金対象なので必要最小限に。 */
   async push(to: string, messages: LineMessage[]): Promise<void> {
     await this.call('/message/push', { to, messages: messages.slice(0, 5) });
+    await this.countAndWarn(to);
+  }
+
+  /**
+   * 通数を数えて、区切りを越えたら知らせる。
+   * ★知らせる行為でも1通使うが、それを数えると際限がないので数えない。
+   * ★数える処理でこけても、本来の送信は成功しているので握りつぶす。
+   */
+  private async countAndWarn(to: string): Promise<void> {
+    if (!this.kv) return;
+    try {
+      const { total, crossed } = await recordPush(this.kv);
+      if (crossed === null) return;
+      await this.call('/message/push', {
+        to, messages: [{ type: 'text', text: buildQuotaWarning(total, crossed) }],
+      });
+      log.info('通数の警告を送りました', { total, crossed });
+    } catch (e) {
+      log.warn('通数の確認に失敗しました', String(e));
+    }
   }
 
   /** ローディングアニメーション（生成中であることを伝える。無料）。 */

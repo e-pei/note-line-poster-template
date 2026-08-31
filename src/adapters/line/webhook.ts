@@ -113,7 +113,7 @@ async function handleEvent(event: LineEvent, env: Env): Promise<void> {
   const userId = event.source?.userId;
   if (!userId) return;
 
-  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN);
+  const line = new LineClient(env.LINE_CHANNEL_ACCESS_TOKEN, env.KV);
   const d = await deps(env);
 
   // ★オーナー（承認できる唯一の人）を決める。

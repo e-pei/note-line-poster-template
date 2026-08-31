@@ -29,7 +29,7 @@ export class GenerateArticleWorkflow extends WorkflowEntrypoint<Env, GeneratePar
   async run(event: WorkflowEvent<GenerateParams>, step: WorkflowStep) {
     const { articleId, lineUserId, debounceSec } = event.payload;
     const db = new Db(this.env.DB);
-    const line = new LineClient(this.env.LINE_CHANNEL_ACCESS_TOKEN);
+    const line = new LineClient(this.env.LINE_CHANNEL_ACCESS_TOKEN, this.env.KV);
 
     // 1. 画像の到着を待つ
     if (debounceSec > 0) {
