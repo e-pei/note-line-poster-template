@@ -8,21 +8,15 @@
  */
 import type { LineMessage } from '../client';
 import type { TenantRow } from '../../../ports/storage/db';
+import {
+  DAILY_LIMIT_OPTIONS, INTERVAL_OPTIONS, RATE_RISK_NOTE,
+  limitLabel, intervalLabel, limitShortLabel, intervalShortLabel,
+} from '../../../core/policy/options';
 
 export interface SettingsView {
   tenant: TenantRow;
   agentConnected: boolean;
   agentOnline: boolean;
-}
-
-function limitLabel(n: number): string {
-  return n > 0 ? `1日 ${n} 本まで` : '無制限';
-}
-
-function intervalLabel(sec: number): string {
-  if (sec <= 0) return 'なし（連続で投稿できます）';
-  if (sec % 3600 === 0) return `${sec / 3600} 時間あけます`;
-  return `${Math.round(sec / 60)} 分あけます`;
 }
 
 function modeLabel(v: SettingsView): string {
@@ -67,21 +61,18 @@ export function buildSettings(v: SettingsView): LineMessage {
 
 /** 1日の上限を選ぶ。 */
 export function buildDailyLimitChoices(current: number): LineMessage {
-  const options = [0, 1, 2, 3, 5, 10];
   return {
     type: 'text',
     text:
       '1日に投稿できる本数を選んでください。\n' +
       `いま: ${limitLabel(current)}\n\n` +
-      '※ この上限は API の費用ではなく、note アカウントを守るためのものです。\n' +
-      'note は「スパムと判断した場合、予告なくアカウントを停止できる」と規約に定めています。\n' +
-      '無制限にする場合は、その前提でお使いください。',
+      RATE_RISK_NOTE,
     quickReply: {
-      items: options.map((n) => ({
+      items: DAILY_LIMIT_OPTIONS.map((n) => ({
         type: 'action' as const,
         action: {
           type: 'postback' as const,
-          label: n === 0 ? '無制限' : `${n}本`,
+          label: limitShortLabel(n),
           data: `action=cfg_daily_set&v=${n}`,
           displayText: n === 0 ? '上限なしにする' : `1日${n}本までにする`,
         },
@@ -92,21 +83,21 @@ export function buildDailyLimitChoices(current: number): LineMessage {
 
 /** 投稿の間隔を選ぶ。 */
 export function buildIntervalChoices(current: number): LineMessage {
-  const options = [0, 600, 1800, 3600, 10800];
   return {
     type: 'text',
     text:
       '前の投稿から、どれくらいあけますか。\n' +
       `いま: ${intervalLabel(current)}\n\n` +
-      '※ まとめて投稿したいときは「なし」を選んでください。',
+      '※ まとめて投稿したいときは「なし」を選んでください。\n' +
+      '※ 短い間隔で続けて投稿するほど、note からまとめて出したように見えます。',
     quickReply: {
-      items: options.map((sec) => ({
+      items: INTERVAL_OPTIONS.map((sec) => ({
         type: 'action' as const,
         action: {
           type: 'postback' as const,
-          label: sec === 0 ? 'なし' : sec >= 3600 ? `${sec / 3600}時間` : `${sec / 60}分`,
+          label: intervalShortLabel(sec),
           data: `action=cfg_interval_set&v=${sec}`,
-          displayText: sec === 0 ? '間隔をあけない' : `${sec >= 3600 ? `${sec / 3600}時間` : `${sec / 60}分`}あける`,
+          displayText: sec === 0 ? '間隔をあけない' : `${intervalShortLabel(sec)}あける`,
         },
       })),
     },

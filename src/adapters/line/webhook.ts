@@ -38,6 +38,7 @@ import {
   buildSettings, buildDailyLimitChoices, buildIntervalChoices, buildModeChoices,
   buildSettingsSaved, type SettingsView,
 } from './messages/settings';
+import { parseDailyLimit, parseIntervalSec } from '../../core/policy/options';
 import { KvImageStore } from '../../ports/storage/images';
 import { newId } from '../../lib/id';
 import { log } from '../../lib/mask';
@@ -605,13 +606,19 @@ async function handlePostback(
     case 'cfg_mode':
       return line.reply(replyToken, [buildModeChoices(await settingsView(env, d))]);
 
-    case 'cfg_daily_set':
-      return saveSetting(env, line, d, replyToken, userId, 'daily',
-        { daily_post_limit: clampInt(params.get('v'), 0, 100) });
+    // ★読めない値のときは何も変えない。
+    //   丸めて 0 にすると「無制限・間隔なし」＝いちばん危ない側に倒れてしまう
+    case 'cfg_daily_set': {
+      const v = parseDailyLimit(params.get('v'));
+      if (v === null) return;
+      return saveSetting(env, line, d, replyToken, userId, 'daily', { daily_post_limit: v });
+    }
 
-    case 'cfg_interval_set':
-      return saveSetting(env, line, d, replyToken, userId, 'interval',
-        { min_interval_sec: clampInt(params.get('v'), 0, 86400) });
+    case 'cfg_interval_set': {
+      const v = parseIntervalSec(params.get('v'));
+      if (v === null) return;
+      return saveSetting(env, line, d, replyToken, userId, 'interval', { min_interval_sec: v });
+    }
 
     case 'cfg_mode_set':
       return saveSetting(env, line, d, replyToken, userId, 'mode',
@@ -1101,13 +1108,6 @@ async function doDisconnect(
 }
 
 // ── 投稿の設定 ──────────────────────────────────────────
-/** ボタンから来た数値を、想定の範囲に丸める（postback は改ざんできる前提で扱う）。 */
-function clampInt(raw: string | null, min: number, max: number): number {
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return min;
-  return Math.min(max, Math.max(min, Math.round(n)));
-}
-
 async function settingsView(env: Env, d: ServiceDeps): Promise<SettingsView> {
   const tenant = await d.db.getTenant(DEFAULT_TENANT_ID);
   const agentConnected = await hasDevice(env.DB, DEFAULT_TENANT_ID);

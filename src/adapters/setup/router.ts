@@ -20,6 +20,11 @@ import { Db, DEFAULT_TENANT_ID } from '../../ports/storage/db';
 import { ensureMasterKey, resolveMasterKey } from '../../core/setup/masterkey';
 import { mayRun, markSetupCompleted, isSetupCompleted } from '../../core/setup/state';
 import { provisionLine, type Step } from '../../core/line/provision';
+import {
+  DAILY_LIMIT_OPTIONS, INTERVAL_OPTIONS, RATE_RISK_NOTE,
+  SUGGESTED_DAILY_LIMIT, SUGGESTED_INTERVAL_SEC,
+  limitLabel, intervalLabel, parseDailyLimit, parseIntervalSec,
+} from '../../core/policy/options';
 import { log } from '../../lib/mask';
 
 export const setupRouter = new Hono<{ Bindings: Env }>();
@@ -33,6 +38,8 @@ interface Status {
   completed: boolean;
   /** ★実行にコードが要るか。表示と実行で同じ値を使う（ずれるとボタンを押して 403 になる） */
   requiresCode: boolean;
+  /** いまの投稿レート設定。まだ表が無ければ null */
+  rate: { daily: number; interval: number } | null;
 }
 
 async function readStatus(c: { env: Env; req: { url: string } }): Promise<Status> {
@@ -51,6 +58,17 @@ async function readStatus(c: { env: Env; req: { url: string } }): Promise<Status
     noteConnected = !!row;
   } catch { /* まだテーブルが無いだけ。未接続として扱う */ }
 
+  // ★ここは SELECT だけにする。画面を開いただけで行を作らない
+  //   （見ただけの人が設定を書き込んだことになるのを避ける）
+  let rate: Status['rate'] = null;
+  try {
+    const row = await c.env.DB
+      .prepare('SELECT daily_post_limit, min_interval_sec FROM tenants WHERE id = ?')
+      .bind(DEFAULT_TENANT_ID)
+      .first<{ daily_post_limit: number; min_interval_sec: number }>();
+    if (row) rate = { daily: row.daily_post_limit, interval: row.min_interval_sec };
+  } catch { /* まだ表が無い。セットアップ後に出せばよい */ }
+
   return {
     origin,
     masterKey: source,
@@ -59,11 +77,48 @@ async function readStatus(c: { env: Env; req: { url: string } }): Promise<Status
     completed,
     // すでに動いている環境（note と繋がっている）も「設定済み」として扱う
     requiresCode: completed || noteConnected,
+    rate,
   };
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (ch) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]!));
+
+/** 選択欄。いまの値が選択肢に無くても消えないよう、必ず1つは選ばれた状態にする */
+function options(list: readonly number[], current: number, label: (n: number) => string): string {
+  const all = list.includes(current) ? [...list] : [...list, current].sort((a, b) => a - b);
+  return all.map((n) =>
+    `<option value="${n}"${n === current ? ' selected' : ''}>${esc(label(n))}</option>`).join('');
+}
+
+/**
+ * 投稿の設定。
+ *
+ * ★LINE からも同じことができる（「投稿設定」）。どちらで変えても同じ値を書く。
+ * ★★出している本数は note の基準ではない。RATE_RISK_NOTE をここから外さないこと。
+ */
+function rateSection(status: Status): string {
+  if (!status.rate) {
+    return `<h2>投稿の設定</h2>
+<div class="note">セットアップが終わると、ここで「1日の本数」と「投稿の間隔」を決められます。</div>`;
+  }
+
+  return `<h2>投稿の設定</h2>
+<div class="note">${esc(RATE_RISK_NOTE).replace(/\n/g, '<br>')}</div>
+<p class="lead">迷ったときは <b>${esc(limitLabel(SUGGESTED_DAILY_LIMIT))}</b>・
+<b>${esc(intervalLabel(SUGGESTED_INTERVAL_SEC))}</b> あたりから始めて、
+様子を見ながら上げてください（これも note の基準ではなく、こちらの目安です）。</p>
+<form method="post" action="/setup/settings">
+ <label for="daily">1日に投稿できる本数</label>
+ <select id="daily" name="daily">${options(DAILY_LIMIT_OPTIONS, status.rate.daily, limitLabel)}</select>
+ <label for="interval" style="margin-top:1rem">前の投稿からあける時間</label>
+ <select id="interval" name="interval">${options(INTERVAL_OPTIONS, status.rate.interval, intervalLabel)}</select>
+ ${status.requiresCode ? `<label for="code3" style="margin-top:1rem">LINE で受け取ったコード</label>
+ <input id="code3" name="code" placeholder="ABCD-2345" autocomplete="off" required>` : ''}
+ <button type="submit">この内容で保存する</button>
+</form>
+<p class="d" style="margin-left:0">LINE で「投稿設定」と送っても、同じことができます。</p>`;
+}
 
 function page(status: Status, steps: Step[] = [], message = ''): string {
   const mark = (ok: boolean) => ok ? '<span class="ok">✓</span>' : '<span class="ng">×</span>';
@@ -86,7 +141,7 @@ function page(status: Status, steps: Step[] = [], message = ''): string {
  ul{list-style:none;padding:0} li{border-bottom:1px solid #eee;padding:.5rem 0}
  .d{color:#666;font-size:.85rem;margin-left:1.4rem}
  form{margin-top:1.2rem} label{display:block;font-size:.9rem;color:#555;margin-bottom:.3rem}
- input{font-size:1rem;padding:.6rem;width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:6px}
+ input,select{font-size:1rem;padding:.6rem;width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:6px;background:#fff}
  button{font-size:1rem;padding:.75rem 1.4rem;margin-top:.9rem;border:0;border-radius:6px;
         background:#0a7d3f;color:#fff;cursor:pointer}
  .note{background:#fff8e6;border:1px solid #f0dfa8;padding:.8rem 1rem;border-radius:6px;font-size:.9rem;margin:1.2rem 0}
@@ -122,6 +177,8 @@ LINE で <b>「セットアップ」</b> と送ると、10分間だけ使える�
 <div class="note">押すと、次のことをまとめて行います。<br>
  ・暗号化の鍵を作る　・LINE の受け口を設定する　・メニューを作る</div>
 <form method="post" action="/setup/run"><button type="submit">セットアップを実行する</button></form>`}
+
+${rateSection(status)}
 
 <h2>持ち主を変える</h2>
 <div class="note">
@@ -231,4 +288,62 @@ setupRouter.post('/setup/reset-owner', async (c) => {
       ? '次にトークへ話しかけた人が、新しい持ち主になります'
       : 'もともと登録されていませんでした',
   }], '引き継ぐ相手に、LINE で話しかけてもらってください。'));
+});
+
+/**
+ * 投稿の設定を保存する。
+ *
+ * ★ここも書き込みなので、実行と同じ入場口（ワンタイムコード）を通す。
+ *   上限を外す操作は、note のアカウント停止に直結しうる。
+ *   「見られてもいい画面」ではあっても、「誰でも変えていい設定」ではない。
+ *
+ * ★1回の送信で両方まとめて保存する。
+ *   コードは1回きりなので、項目ごとに分けると毎回取り直しになる。
+ */
+setupRouter.post('/setup/settings', async (c) => {
+  const status = await readStatus(c);
+
+  const form = await c.req.formData().catch(() => null);
+  const code = (form?.get('code') as string | null) ?? null;
+  const permission = await mayRun(c.env.KV, code, status.requiresCode);
+
+  if (!permission.allowed) {
+    const msg = permission.reason === 'code_required'
+      ? 'コードが必要です。LINE で「セットアップ」と送ると届きます。'
+      : 'コードが違うか、期限が切れています。LINE で取り直してください。';
+    return c.html(page(status, [], msg), 403);
+  }
+
+  // ★読めない値のときは、その項目を変えない。
+  //   0 に丸めると「無制限・間隔なし」＝いちばん危ない側に倒れてしまう
+  const daily = parseDailyLimit(form?.get('daily') as string | null);
+  const interval = parseIntervalSec(form?.get('interval') as string | null);
+
+  if (daily === null && interval === null) {
+    return c.html(page(status, [{
+      label: '投稿の設定', ok: false, detail: '入力を受け取れませんでした。もう一度お試しください。',
+    }]), 400);
+  }
+
+  try {
+    await new Db(c.env.DB).updateTenantSettings(DEFAULT_TENANT_ID, {
+      ...(daily !== null ? { daily_post_limit: daily } : {}),
+      ...(interval !== null ? { min_interval_sec: interval } : {}),
+    }, 'web');
+  } catch (e) {
+    log.warn('投稿の設定を保存できませんでした', String(e));
+    return c.html(page(status, [{
+      label: '投稿の設定', ok: false,
+      detail: 'まだ準備が終わっていないようです。先に「セットアップを実行する」をお試しください。',
+    }]), 500);
+  }
+
+  const after = await readStatus(c);
+  const unlimited = after.rate?.daily === 0;
+  return c.html(page(after, [{
+    label: '投稿の設定', ok: true,
+    detail: `${limitLabel(after.rate?.daily ?? 0)} ／ ${intervalLabel(after.rate?.interval ?? 0)}`,
+  }], unlimited
+    ? '保存しました。上限なしにした場合、どれくらい投稿するかはご自身の判断になります。'
+    : '保存しました。'));
 });
