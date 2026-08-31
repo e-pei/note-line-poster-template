@@ -3,29 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "LINE公式アカウント → Claude が SEO 記事化 → note へ投稿する SaaS",
+  "description": "LINE にネタを送ると AI が SEO 記事にして note へ投稿するシステム",
   "scripts": {
-    "phase0:session": "node scripts/phase0/verify.mjs 1",
-    "phase0:draft": "node scripts/phase0/verify.mjs 2",
-    "phase0:publish": "node scripts/phase0/verify.mjs 2 --publish",
-    "phase0:image": "node scripts/phase0/verify.mjs 3",
-    "phase0:burst": "node scripts/phase0/verify.mjs 6",
-    "probe:deploy": "wrangler deploy --config workers/phase0-probe/wrangler.jsonc",
-    "probe:tail": "wrangler tail --config workers/phase0-probe/wrangler.jsonc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:live": "vitest run --config vitest.live.config.ts",
-    "migrate": "wrangler d1 migrations apply DB --remote",
-    "deploy": "npm run migrate && wrangler deploy",
-    "deploy:only": "wrangler deploy",
+    "setup": "node scripts/setup.mjs",
+    "setup:line": "node scripts/setup-line.mjs",
     "ext:package": "node scripts/package-extension.mjs",
     "ext:icons": "node scripts/make-icons.mjs",
-    "setup:line": "node scripts/setup-line.mjs",
-    "setup:line:dry": "node scripts/setup-line.mjs --dry-run",
-    "setup": "node scripts/setup.mjs",
-    "setup:dry": "node scripts/setup.mjs --dry-run",
-    "template": "node scripts/build-template.mjs"
+    "predeploy": "wrangler d1 migrations apply DB --remote",
+    "deploy": "wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
@@ -52,24 +39,6 @@
       "automation"
     ],
     "docs_url": "https://github.com/e-pei/note-line-poster-template",
-    "preview_image_url": "",
-    "publish": true,
-    "bindings": {
-      "LINE_CHANNEL_SECRET": {
-        "description": "LINE Developers →「チャネル基本設定」タブの下のほうにある値（32文字くらい）"
-      },
-      "LINE_CHANNEL_ACCESS_TOKEN": {
-        "description": "LINE Developers →「Messaging API設定」タブの一番下 →「チャネルアクセストークン（長期）」の発行ボタンで出る値（200文字くらい）"
-      },
-      "ANTHROPIC_API_KEY": {
-        "description": "console.anthropic.com で発行する sk-ant- で始まるキー。※Pro / Max の個人プランは規約上使えません"
-      },
-      "ANTHROPIC_WORKSPACE_ID": {
-        "description": "（任意）キーをワークスペースに紐づけた場合のみ。wrkspc_ で始まるID"
-      },
-      "MASTER_KEY_V1": {
-        "description": "（任意）空のままで構いません。配備後の設定画面で自動的に作られます"
-      }
-    }
+    "publish": true
   }
 }
