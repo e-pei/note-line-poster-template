@@ -182,7 +182,8 @@ setupRouter.post('/setup/run', async (c) => {
   if (!c.env.LINE_CHANNEL_ACCESS_TOKEN) {
     steps.push({ label: 'LINE の設定', ok: false, detail: 'トークンが登録されていません' });
   } else {
-    const line = await provisionLine(c.env.LINE_CHANNEL_ACCESS_TOKEN, status.origin);
+    const line = await provisionLine(
+      c.env.LINE_CHANNEL_ACCESS_TOKEN, status.origin, c.env.KV, status.noteConnected);
     steps.push(...line.steps);
   }
 

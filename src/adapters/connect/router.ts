@@ -22,6 +22,7 @@ import { Db, DEFAULT_TENANT_ID } from '../../ports/storage/db';
 import { LineClient, text } from '../line/client';
 import { log } from '../../lib/mask';
 import { resolveMasterKey } from '../../core/setup/masterkey';
+import { switchTo } from '../../core/line/richmenu';
 
 const ConnectBody = z.object({
   code: z.string().min(4).max(32),
@@ -161,6 +162,9 @@ export async function handleConnectNote(req: Request, env: Env): Promise<Respons
       ? `お待たせしていた記事が ${waiting} 件あります。順番に投稿しますので、そのままお待ちください。`
       : 'このまま記事を作れます。'),
   )]).catch(() => { /* 通知が失敗しても連携自体は成立している */ });
+
+  // ★繋がったので、通常の3ボタンへ切り替える（顧客の操作は不要）
+  await switchTo(env.LINE_CHANNEL_ACCESS_TOKEN, env.KV, 'normal');
 
   log.info('note 連携が完了しました', { urlname: me.urlname, waiting, mode: tenant.execution_mode });
   return json({

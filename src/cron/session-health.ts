@@ -12,6 +12,7 @@ import { resolveNoteSession, persistRefreshedCookie } from '../core/session/reso
 import { markSessionStatus } from '../core/session/store';
 import { buildSessionExpired } from '../adapters/line/messages/connect';
 import { log } from '../lib/mask';
+import { switchTo } from '../core/line/richmenu';
 
 export async function sessionHealth(env: Env): Promise<void> {
   const db = new Db(env.DB);
@@ -35,7 +36,15 @@ export async function sessionHealth(env: Env): Promise<void> {
   }
 
   const ownerId = env.LINE_OWNER_USER_ID || (await db.getOwnerLineUserId(DEFAULT_TENANT_ID));
-  if (alive || !ownerId) return;
+  if (alive) return;
+
+  // ★連携が切れたので、メニューを「セットアップ用」に戻す。
+  //   「note連携」ボタンが出ていないと、顧客は毎回文字を打つことになる。
+  //   押すだけで復旧できる状態を保つ（2026-08-31 運用側の判断）。
+  //   ★通知の1日1回制限より前に置く。通知済みでもメニューは正しくしておきたい
+  await switchTo(env.LINE_CHANNEL_ACCESS_TOKEN, env.KV, 'setup');
+
+  if (!ownerId) return;
 
   // ★同じ通知を毎朝送らない。1日1回に抑える
   if (await alreadyNotifiedToday(env)) return;

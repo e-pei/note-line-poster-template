@@ -7,18 +7,11 @@
  * ★Webhook の URL は、**このリクエストが届いた場所**から作る（引数で受け取る）。
  *   決め打ちにすると、他人の Worker を向けてしまう事故が起きる（過去に実際に埋め込んでいた）。
  */
-import RICHMENU from '../../../assets/richmenu.json';
 import { log } from '../../lib/mask';
+import { switchTo, forgetMenus, menuFor } from './richmenu';
 
 const API = 'https://api.line.me/v2/bot';
 const DATA_API = 'https://api-data.line.me/v2/bot';
-
-/** このシステムが作るリッチメニューの名前。片付けの目印にする */
-export const RICHMENU_NAME = 'note-line-poster';
-
-/** メニュー画像の取得先。配布リポジトリは Public なので鍵なしで読める */
-export const RICHMENU_IMAGE_URL =
-  'https://raw.githubusercontent.com/e-pei/note-line-poster-template/main/assets/richmenu.png';
 
 /** 1手順の結果。画面にそのまま並べられる形にしておく */
 export interface Step {
@@ -92,47 +85,14 @@ async function setupWebhook(token: string, origin: string, steps: Step[]): Promi
   return endpoint;
 }
 
-/** リッチメニューを作り直して、全員の既定にする */
-async function setupRichMenu(token: string, steps: Step[]): Promise<void> {
-  let image: Uint8Array;
-  try {
-    const res = await fetch(RICHMENU_IMAGE_URL);
-    if (!res.ok) throw new Error(`画像を取得できません (${res.status})`);
-    image = new Uint8Array(await res.arrayBuffer());
-  } catch (e) {
-    steps.push({ label: 'メニュー画像の取得', ok: false, detail: String(e) });
-    return;
-  }
-
-  if (image.length > 1024 * 1024) {
-    steps.push({ label: 'メニュー画像の確認', ok: false, detail: '1MB を超えています（LINE に弾かれます）' });
-    return;
-  }
-
-  // 作り直す前に、いまあるものを控えておく（新しいものを立ててから消す）
-  const { richmenus = [] } = await call(token, 'GET', '/richmenu/list');
-  const ours = richmenus.filter((m: { name?: string }) => m.name === RICHMENU_NAME);
-
-  const created = await call(token, 'POST', '/richmenu', RICHMENU);
-  await call(token, 'POST', `/richmenu/${created.richMenuId}/content`, image,
-    { base: DATA_API, contentType: 'image/png' });
-  await call(token, 'POST', `/user/all/richmenu/${created.richMenuId}`);
-  steps.push({ label: 'メニューの作成と既定への設定', ok: true });
-
-  for (const old of ours) {
-    await call(token, 'DELETE', `/richmenu/${old.richMenuId}`).catch(() => {});
-  }
-  if (ours.length > 0) {
-    steps.push({ label: '古いメニューの片付け', ok: true, detail: `${ours.length}件` });
-  }
-}
-
 /**
  * LINE 側の設定をまとめて行う。
  *
  * @param origin このシステム自身の住所（`https://〇〇.workers.dev`）
  */
-export async function provisionLine(token: string, origin: string): Promise<ProvisionResult> {
+export async function provisionLine(
+  token: string, origin: string, kv: KVNamespace, noteConnected: boolean,
+): Promise<ProvisionResult> {
   const steps: Step[] = [];
   let webhookUrl: string | undefined;
 
@@ -146,7 +106,17 @@ export async function provisionLine(token: string, origin: string): Promise<Prov
 
   try {
     webhookUrl = await setupWebhook(token, origin, steps);
-    await setupRichMenu(token, steps);
+
+    // ★メニューは作り直す（画像を差し替えたときに反映されるように）。
+    //   まだ note と繋がっていなければ、セットアップ用の2ボタンを出す
+    await forgetMenus(kv);
+    const kind = menuFor(noteConnected);
+    const ok = await switchTo(token, kv, kind);
+    steps.push(ok
+      ? { label: 'メニューの作成', ok: true,
+          detail: kind === 'setup' ? 'セットアップ用（2ボタン）' : '通常（3ボタン）' }
+      : { label: 'メニューの作成', ok: false,
+          detail: 'メニュー画像を取得できませんでした。文字を打てば操作はできます' });
   } catch (e) {
     log.warn('LINE の設定でつまずきました', String(e));
     steps.push({ label: '設定の続行', ok: false, detail: String(e) });
