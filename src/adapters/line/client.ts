@@ -1,13 +1,16 @@
 /**
  * LINE Messaging API クライアント。
  *
- * ★課金の要点:
- *   Reply（応答メッセージ）は無料 / Push は課金対象。
+ * ★通数の要点:
+ *   Reply（応答メッセージ）は無料で**通数に数えられない** / Push は無料枠（月200通）を消費する。
  *   replyToken の寿命は約1分なので、記事生成（1〜3分）の完了通知は Push を使う。
- *   1記事あたり Push 1〜2通に抑えれば、無料プラン（月200通）で月100本前後まで回る。
+ *   1記事あたり Push 1〜2通に抑えれば、無料プランで月100本前後まで回る。
+ *
+ * ★**枠を使い切っても、勝手に課金はされない**（無料プランは超えて送れない仕様）。
+ *   起きるのは「届かなくなる」だけ。詳しくは core/line/quota.ts を参照。
  */
 import { log } from '../../lib/mask';
-import { recordPush, buildQuotaWarning } from '../../core/line/quota';
+import { recordPush, buildQuotaWarning, markLimitReached, takeLimitNotice } from '../../core/line/quota';
 
 const API = 'https://api.line.me/v2/bot';
 const CONTENT_API = 'https://api-data.line.me/v2/bot';
@@ -35,28 +38,49 @@ export class LineClient {
     };
   }
 
-  private async call(path: string, body: unknown): Promise<void> {
+  /** @returns 通ったかどうかと、断られた理由（呼び出し側が見分けたいことがある） */
+  private async call(path: string, body: unknown): Promise<{ ok: boolean; detail: string }> {
     const res = await fetch(`${API}${path}`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify(body),
     });
-    if (!res.ok) {
-      const text = await res.text();
-      log.warn(`LINE API 失敗 ${path}`, { status: res.status, body: text.slice(0, 300) });
-      // 通知の失敗で本処理を落とさない（記事は投稿済みかもしれない）
-    }
+    if (res.ok) return { ok: true, detail: '' };
+
+    const detail = await res.text();
+    log.warn(`LINE API 失敗 ${path}`, { status: res.status, body: detail.slice(0, 300) });
+    // 通知の失敗で本処理を落とさない（記事は投稿済みかもしれない）
+    return { ok: false, detail };
   }
 
-  /** 応答メッセージ。無料だが replyToken は約1分で失効する。 */
+  /**
+   * 応答メッセージ。無料で、通数にも数えられない。
+   *
+   * ★上限に達したことを伝えられるのは、ここだけ。
+   *   プッシュが通らなくなっているのだから、知らせもプッシュでは届かない。
+   *   ★**先頭に足す**（末尾に足すと、最後のメッセージのボタンが消える）。
+   */
   async reply(replyToken: string, messages: LineMessage[]): Promise<void> {
-    await this.call('/message/reply', { replyToken, messages: messages.slice(0, 5) });
+    const out = messages.slice(0, 5);
+    if (this.kv && out.length < 5) {
+      const notice = await takeLimitNotice(this.kv).catch(() => null);
+      if (notice) out.unshift(text(notice));
+    }
+    await this.call('/message/reply', { replyToken, messages: out });
   }
 
-  /** プッシュメッセージ。課金対象なので必要最小限に。 */
+  /** プッシュメッセージ。無料枠を消費するので必要最小限に。 */
   async push(to: string, messages: LineMessage[]): Promise<void> {
-    await this.call('/message/push', { to, messages: messages.slice(0, 5) });
-    await this.countAndWarn(to);
+    const res = await this.call('/message/push', { to, messages: messages.slice(0, 5) });
+
+    // ★数えるのは届いたぶんだけ。断られたものを数えると、実態からずれていく
+    if (res.ok) { await this.countAndWarn(to); return; }
+
+    // ★「今月はもう送れない」は LINE が教えてくれる。こちらの数え上げより確かなので、そちらを信じる
+    if (this.kv && /monthly limit/i.test(res.detail)) {
+      await markLimitReached(this.kv);
+      log.info('LINE の無料通数を使い切りました（次の返信でお知らせします）');
+    }
   }
 
   /**
