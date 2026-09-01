@@ -781,20 +781,40 @@
   <section class="phase" id="p0">
     <div class="phase__head">
       <span class="phase__num">00</span>
-      <h2 class="phase__title">メールアドレスを1つ用意する</h2>
+      <h2 class="phase__title">使うメールアドレスを決める</h2>
       <span class="phase__time">5分</span>
     </div>
     <p class="phase__intro">
-      これから4つのサービスに登録します。全部を同じメールアドレスで作ると、あとで「どれがどのアカウントだったか」で迷いません。
+      これから5つのサービスに登録します。使うアドレスを先に決めておくと、あとで
+      「どれがどのアカウントだったか」で迷いません。
     </p>
 
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s0-1">
       <div class="step__body">
-        <h3 class="step__title">新しい Google アカウントを作る <span class="tag tag--manual">手でやる</span></h3>
-        <p>このアドレスで <strong>LINEビジネスID・note・Anthropic・Cloudflare</strong> の4つを作ります。</p>
+        <h3 class="step__title">使うアドレスを決める <span class="tag tag--manual">手でやる</span></h3>
+        <p>このアドレスで <strong>LINEビジネスID・note・Claude・Cloudflare・GitHub</strong> の5つを登録します。</p>
+        <p><strong>いま使っているアドレスで構いません。</strong>
+        Gmail である必要も、新しく作る必要もありません。仕事で使っているアドレスで大丈夫です。</p>
+
+        <div class="note note--alarm">
+          <span class="note__label">★すでに note を使っている方へ</span>
+          <p>記事は<strong>そのアカウントに投稿します。</strong>note だけは
+          <strong>いま使っているアカウントをそのまま使ってください。</strong>
+          新しく作ると、これまでの記事やフォロワーとは別の場所に投稿されてしまいます。</p>
+          <p>その場合、<strong>02 の「note のアカウントを作る」は飛ばして構いません。</strong>
+          パソコンの Chrome で note にログインしておくだけで大丈夫です。</p>
+        </div>
+
         <div class="note">
-          <span class="note__label">確認メールが4通届きます</span>
+          <span class="note__label">新しく作るなら（任意）</span>
+          <p>仕事とプライベートを分けたい場合や、
+          <strong>あとで別の人に引き継ぐ予定がある</strong>場合は、
+          この案件専用のアドレスを1つ作っておくと楽です。Google でも、他のサービスでも構いません。</p>
+        </div>
+
+        <div class="note">
+          <span class="note__label">確認メールが何通か届きます</span>
           <p>どれも本登録に必要です。迷惑メールに入っていないか、あとで一度見てください。</p>
         </div>
       </div>
@@ -1031,18 +1051,28 @@
   <section class="phase" id="p2">
     <div class="phase__head">
       <span class="phase__num">02</span>
-      <h2 class="phase__title">note のアカウントを作る</h2>
+      <h2 class="phase__title">note のアカウントを用意する</h2>
       <span class="phase__time">5分</span>
     </div>
+    <p class="phase__intro">
+      <strong>すでに note を使っている方は、そのアカウントをそのまま使います。</strong>
+      最初の2つは飛ばして、<strong>3つ目（Chrome でログインしたままにする）だけ</strong>やってください。
+    </p>
 
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s2-1">
       <div class="step__body">
         <h3 class="step__title">note に登録する <span class="tag tag--manual">手でやる</span></h3>
         <p>
-          <a href="https://note.com/signup" target="_blank" rel="noopener">note.com</a> で、同じメールアドレスで登録します。
+          <a href="https://note.com/signup" target="_blank" rel="noopener">note.com</a> で登録します。
+          <strong>00 で決めたアドレス</strong>を使ってください。
           クリエイター名（URL に入る英数字）もここで決めます。
         </p>
+        <div class="note">
+          <span class="note__label">すでにアカウントがあるなら、作らないこと</span>
+          <p>記事は<strong>ログインしているアカウントに投稿されます。</strong>
+          新しく作ると、これまでの記事やフォロワーとは<strong>別の場所</strong>に載ってしまいます。</p>
+        </div>
       </div>
     </label>
 
@@ -1054,6 +1084,7 @@
           <span class="note__label">飛ばすと後で必ず詰まる</span>
           <p><strong>メール認証が済んでいないと、note は記事の投稿を受け付けません。</strong>
           届いた確認メールのリンクを必ず開いてください。ここを忘れると、最後のテスト投稿で「メール認証が完了していません」と言われます。</p>
+          <p>もともと note をお使いの方は、すでに済んでいます。</p>
         </div>
       </div>
     </label>
