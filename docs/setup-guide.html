@@ -781,41 +781,86 @@
   <section class="phase" id="p0">
     <div class="phase__head">
       <span class="phase__num">00</span>
-      <h2 class="phase__title">使うメールアドレスを決める</h2>
+      <h2 class="phase__title">使うアカウントを決める</h2>
       <span class="phase__time">5分</span>
     </div>
     <p class="phase__intro">
-      これから5つのサービスに登録します。使うアドレスを先に決めておくと、あとで
-      「どれがどのアカウントだったか」で迷いません。
+      これから <strong>5つのサービス</strong>を使います。
+      <strong>すでにお持ちのものは、そのアカウントをそのまま使ってください。</strong>
+      新しく登録するのは、持っていないものだけです。
     </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>サービス</th><th>何に使うか</th><th>すでにお持ちなら</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>LINE公式<br>アカウント</strong></td>
+            <td>ネタを送る入口</td>
+            <td>★<strong>新しく作るのをおすすめします</strong>（下の注意を読んでください）</td>
+          </tr>
+          <tr>
+            <td><strong>note</strong></td>
+            <td>記事の投稿先</td>
+            <td>★<strong>必ず、いまお使いのアカウントを</strong>（下の注意を読んでください）</td>
+          </tr>
+          <tr>
+            <td><strong>Claude</strong></td>
+            <td>記事を書く</td>
+            <td>そのまま使えます。ただし <strong>Pro / Max とは別に「API」の支払い登録</strong>が要ります</td>
+          </tr>
+          <tr>
+            <td><strong>Cloudflare</strong></td>
+            <td>システムを動かす場所</td>
+            <td>そのまま使えます。<strong>すでに何か動かしている場合は、名前をぶつけないように</strong></td>
+          </tr>
+          <tr>
+            <td><strong>GitHub</strong></td>
+            <td>システムの置き場所</td>
+            <td>そのまま使えます。とくに注意はありません</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s0-1">
       <div class="step__body">
-        <h3 class="step__title">使うアドレスを決める <span class="tag tag--manual">手でやる</span></h3>
-        <p>このアドレスで <strong>LINEビジネスID・note・Claude・Cloudflare・GitHub</strong> の5つを登録します。</p>
-        <p><strong>いま使っているアドレスで構いません。</strong>
-        Gmail である必要も、新しく作る必要もありません。仕事で使っているアドレスで大丈夫です。</p>
+        <h3 class="step__title">持っているものを確かめ、足りないぶんのアドレスを決める <span class="tag tag--manual">手でやる</span></h3>
+        <p>上の表で、<strong>すでに持っているものに印を付けてください。</strong>
+        残ったものだけ、これから登録します。</p>
+        <p><strong>登録に使うアドレスは、いま使っているもので構いません。</strong>
+        Gmail である必要はありません。<strong>サービスごとに違うアドレスでも問題ありません</strong>
+        （すでにお持ちのものは、そのときのアドレスのままで大丈夫です）。</p>
 
         <div class="note note--alarm">
-          <span class="note__label">★すでに note を使っている方へ</span>
-          <p>記事は<strong>そのアカウントに投稿します。</strong>note だけは
-          <strong>いま使っているアカウントをそのまま使ってください。</strong>
-          新しく作ると、これまでの記事やフォロワーとは別の場所に投稿されてしまいます。</p>
-          <p>その場合、<strong>02 の「note のアカウントを作る」は飛ばして構いません。</strong>
+          <span class="note__label">★ note は「いま使っているアカウント」を使ってください</span>
+          <p>記事は<strong>ログインしているアカウントに投稿されます。</strong>
+          新しく作ると、これまでの記事やフォロワーとは<strong>別の場所</strong>に載ってしまいます。</p>
+          <p>お持ちの場合、<strong>02 章は最初の2つを飛ばして構いません。</strong>
           パソコンの Chrome で note にログインしておくだけで大丈夫です。</p>
         </div>
 
-        <div class="note">
-          <span class="note__label">新しく作るなら（任意）</span>
-          <p>仕事とプライベートを分けたい場合や、
-          <strong>あとで別の人に引き継ぐ予定がある</strong>場合は、
-          この案件専用のアドレスを1つ作っておくと楽です。Google でも、他のサービスでも構いません。</p>
+        <div class="note note--alarm">
+          <span class="note__label">★ LINE公式アカウントは、逆に「新しく作る」ほうが安全です</span>
+          <p>この手順の中で、<strong>自動あいさつや自動返信をオフにします。</strong>
+          お客さまとのやりとりに<strong>すでに使っている</strong>公式アカウントでこれをやると、
+          <strong>お客さまへの返信の動きが変わってしまいます。</strong></p>
+          <p>記事を作るための<strong>専用のアカウントを1つ</strong>作ってください。
+          LINE公式アカウントは<strong>いくつでも無料で作れます。</strong></p>
         </div>
 
         <div class="note">
-          <span class="note__label">確認メールが何通か届きます</span>
-          <p>どれも本登録に必要です。迷惑メールに入っていないか、あとで一度見てください。</p>
+          <span class="note__label">新しくメールアドレスを作るなら（任意）</span>
+          <p>仕事とプライベートを分けたい場合や、
+          <strong>あとで別の人に引き継ぐ予定がある</strong>場合は、
+          この用途だけのアドレスを1つ作っておくと楽です。Google でも、他のサービスでも構いません。</p>
+        </div>
+
+        <div class="note">
+          <span class="note__label">確認メールが届きます</span>
+          <p>新しく登録したぶんだけ届きます。どれも本登録に必要なので、
+          迷惑メールに入っていないか、あとで一度見てください。</p>
         </div>
       </div>
     </label>
@@ -832,6 +877,14 @@
       いちばん手数が多いところです。<strong>使う画面が2つあって、行ったり来たり</strong>するので混乱しやすい場所でもあります。
       先に、その2つの違いだけ頭に入れておいてください。
     </p>
+    <div class="note note--alarm">
+      <span class="note__label">すでに LINE公式アカウントをお持ちでも、ここは新しく作ってください</span>
+      <p>この章で<strong>自動あいさつと自動返信をオフにします。</strong>
+      お客さま対応に使っているアカウントでこれをやると、<strong>返信の動きが変わってしまいます。</strong>
+      公式アカウントは<strong>いくつでも無料で作れます。</strong></p>
+      <p>なお、<strong>LINEビジネスID（ログインするためのID）はお持ちのものを使えます。</strong>
+      その場合、最初の手順は飛ばして構いません。</p>
+    </div>
 
     <div class="table-wrap">
       <table>
@@ -1109,6 +1162,11 @@
       記事を書くのは Claude です。<strong>ここだけはお金がかかります。</strong>
       先にお金を入れておいて、使った分だけ減っていく仕組みです（携帯のプリペイドと同じ考え方）。
     </p>
+    <div class="note">
+      <span class="note__label">すでに Claude をお使いの方へ</span>
+      <p><strong>アカウントはそのまま使えます。</strong>新しく作る必要はありません。
+      ただし下の注意のとおり、<strong>「API」用の支払い登録は別に必要</strong>です。</p>
+    </div>
 
     <div class="note note--alarm">
       <span class="note__label">★普段使っている Claude（Pro / Max）とは別物です</span>
@@ -1214,6 +1272,12 @@
     <p class="phase__intro">
       システムを動かす場所です。<strong>登録するだけ</strong>で、中で何かを作る作業はありません。
     </p>
+    <div class="note">
+      <span class="note__label">すでに Cloudflare をお使いなら、この章は飛ばせます</span>
+      <p>そのアカウントにそのまま入れて構いません。
+      ★<strong>すでに何か動かしている場合</strong>だけ、あとの配備で
+      <strong>同じ名前を付けないように</strong>気をつけてください（名前がぶつかると止まります）。</p>
+    </div>
 
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s4-1">
@@ -1244,6 +1308,10 @@
     <p class="phase__intro">
       Cloudflare が、システムの置き場所として使います。
     </p>
+    <div class="note">
+      <span class="note__label">すでに GitHub をお持ちなら、この章は飛ばせます</span>
+      <p>そのアカウントをそのまま使って構いません。とくに注意はありません。</p>
+    </div>
 
     <label class="step">
       <input type="checkbox" class="step__check" data-step="s5-1">
