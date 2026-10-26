@@ -18,3 +18,7 @@ dist/
 
 # Phase 0 の生ログ（Cookie がマスクされていても外に出さない）
 scripts/phase0/raw/
+
+# 顧客の画像素材（キャラクターシート・ロゴ。README 以外はコミットしない）
+customer-assets/*
+!customer-assets/README.md

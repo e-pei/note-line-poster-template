@@ -4,6 +4,7 @@
  * ★ここは薄く保つ。ルーティングと配線だけで、判断はしない。
  *   入口が増えても（REST は Phase 2、MCP は Phase 3）、ここに数行足すだけで済むようにする。
  */
+import { chooseProvider, describeMissingLlm, llmConfigFromEnv } from './ports/llm';
 import { Hono } from 'hono';
 import type { Env } from './env';
 import { handleLineWebhook } from './adapters/line/webhook';
@@ -18,6 +19,8 @@ import { setupRouter } from './adapters/setup/router';
 import { hasDevice, isAgentOnline } from './core/agent/jobs';
 import { loadNoteSession } from './core/session/store';
 import { DEFAULT_TENANT_ID } from './ports/storage/db';
+import { REQUIRED_COLUMNS } from './core/setup/schema-check';
+import { VERSION } from './version';
 
 export { GenerateArticleWorkflow } from './workflows/generate-article';
 
@@ -43,19 +46,8 @@ app.get('/health', async (c) => {
     ok = false;
   }
 
-  // コードが依存している列。増やしたらここにも足す
-  const required: Record<string, string[]> = {
-    articles: ['revision_instruction', 'revision_count', 'image_alts_json', 'note_id', 'note_key', 'removed_at', 'requested_by'],
-    images: ['is_eyecatch', 'slot_index', 'note_image_url'],
-    tenant_context: ['prompt_snippet'],
-    style_profiles: ['prompt_snippet'],
-    note_sessions: ['cookies_ref', 'user_agent', 'status'],
-    tenants: ['execution_mode', 'agent_fallback', 'daily_post_limit', 'min_interval_sec'],
-    agent_devices: ['token_hash', 'last_seen_at', 'revoked_at'],
-    agent_jobs: ['plan_json', 'state', 'lease_until'],
-    tenant_secrets: ['ciphertext', 'iv', 'wrapped_dek', 'dek_iv', 'key_version'],
-    line_members: ['line_user_id', 'role', 'display_name'],
-  };
+  // コードが依存している列。増やしたら core/setup/schema-check.ts に足す
+  const required = REQUIRED_COLUMNS;
 
   for (const [table, columns] of Object.entries(required)) {
     try {
@@ -105,7 +97,15 @@ app.get('/health', async (c) => {
     ok = false;
   }
 
-  return c.json({ ok, checks }, ok ? 200 : 500);
+  // 文章生成に使う提供元（秘密は出さない）。使えなければ ok を落とす
+  const llmCfg = llmConfigFromEnv(c.env);
+  const provider = chooseProvider(llmCfg);
+  checks.llm = provider ?? describeMissingLlm(llmCfg);
+  if (!provider) ok = false;
+  checks.thumbnail = c.env.OPENAI_API_KEY ? 'enabled' : 'disabled（OPENAI_API_KEY 未登録）';
+
+  // ★version は追加のみ（既存の ok / checks の形は変えない）。運用側の `npm run fleet` が読む
+  return c.json({ ok, version: VERSION, checks }, ok ? 200 : 500);
 });
 
 /** LINE Webhook（署名検証は handleLineWebhook 内で行う）。 */
